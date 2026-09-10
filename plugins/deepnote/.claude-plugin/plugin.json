@@ -6,8 +6,8 @@
     "name": "Deepnote",
     "url": "https://deepnote.com"
   },
-  "homepage": "https://github.com/deepnote/codex-plugin",
-  "repository": "https://github.com/deepnote/codex-plugin",
+  "homepage": "https://github.com/deepnote/agent-plugins",
+  "repository": "https://github.com/deepnote/agent-plugins",
   "license": "Apache-2.0",
   "keywords": [
     "deepnote",

@@ -222,7 +222,7 @@ If `create_run` fails before returning a run ID, Codex should surface the MCP/AP
 Add this repo as a Codex marketplace:
 
 ```bash
-codex plugin marketplace add deepnote/codex-plugin
+codex plugin marketplace add deepnote/agent-plugins
 ```
 
 Then set `DEEPNOTE_MCP_TOKEN`, restart Codex, open the plugin directory, choose the Deepnote marketplace, and install the Deepnote plugin. If Codex prompts for setup during install, confirm that the environment variable is set in the environment Codex starts from.
@@ -230,7 +230,7 @@ Then set `DEEPNOTE_MCP_TOKEN`, restart Codex, open the plugin directory, choose 
 To pin a branch, tag, or commit:
 
 ```bash
-codex plugin marketplace add deepnote/codex-plugin --ref main
+codex plugin marketplace add deepnote/agent-plugins --ref main
 ```
 
 ### Claude Code
@@ -238,11 +238,11 @@ codex plugin marketplace add deepnote/codex-plugin --ref main
 Add this repo as a Claude Code marketplace and install the plugin from it:
 
 ```
-/plugin marketplace add deepnote/codex-plugin
+/plugin marketplace add deepnote/agent-plugins
 /plugin install deepnote@deepnote
 ```
 
-Then run `/mcp`, choose the Deepnote server, and complete the OAuth sign-in. To pin a branch or tag, use `/plugin marketplace add deepnote/codex-plugin@main`.
+Then run `/mcp`, choose the Deepnote server, and complete the OAuth sign-in. To pin a branch or tag, use `/plugin marketplace add deepnote/agent-plugins@main`.
 
 ## Install Locally For Development
 
@@ -251,7 +251,7 @@ Then run `/mcp`, choose the Deepnote server, and complete the OAuth sign-in. To 
 Codex discovers plugins through the repo marketplace at `.agents/plugins/marketplace.json`. To test this checkout directly:
 
 ```bash
-codex plugin marketplace add /absolute/path/to/codex-plugin
+codex plugin marketplace add /absolute/path/to/agent-plugins
 ```
 
 For this checkout, that is:
@@ -298,13 +298,13 @@ codex plugin marketplace upgrade deepnote
 Claude Code discovers plugins through the repo marketplace at `.claude-plugin/marketplace.json`. To load this checkout for one session without installing anything:
 
 ```bash
-claude --plugin-dir /absolute/path/to/codex-plugin/plugins/deepnote
+claude --plugin-dir /absolute/path/to/agent-plugins/plugins/deepnote
 ```
 
 To install from the checkout instead:
 
 ```
-/plugin marketplace add /absolute/path/to/codex-plugin
+/plugin marketplace add /absolute/path/to/agent-plugins
 /plugin install deepnote@deepnote
 ```
 
