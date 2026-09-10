@@ -79,7 +79,14 @@ Creation workflows keep exactly one active target notebook, and every later bloc
 
 ## Block Creation
 
-Choose a `type` from Deepnote's block vocabulary: `code`, `sql`, `markdown`, input blocks such as `input-text`, `input-select`, and `input-checkbox`, and text-cell variants such as `text-cell-h1`, `text-cell-p`, and `text-cell-callout`.
+Block types, as enumerated by the `create_block` schema:
+
+- Code and data: `code`, `sql`, `markdown`, `notebook-function`
+- Inputs: `input-text`, `input-textarea`, `input-select`, `input-date`, `input-date-range`, `input-slider`, `input-file`, `input-checkbox`
+- Text cells: `text-cell-h1`, `text-cell-h2`, `text-cell-h3`, `text-cell-p`, `text-cell-bullet`, `text-cell-todo`, `text-cell-callout`
+- Other: `visualization`, `pivot-table`, `image`, `button`, `separator`, `big-number`, `agent`
+
+A text cell holds one line. A bullet list is one `text-cell-bullet` block per item, and a task list is one `text-cell-todo` per item with `metadata.checked`. Bullets have no nesting or numbering; there is no numbered-list type, so use a `markdown` block for ordered lists, tables, links, and anything richer than a single formatted line. `text-cell-callout` takes `metadata.color` of `blue`, `green`, `yellow`, `red`, or `purple`.
 
 For SQL blocks, resolve the integration with `list_integrations` when the user names a connection, pass it as top-level `integrationId`, and never put `sql_integration_id` inside `metadata`. Do not pass `integrationId` for non-SQL blocks; it must reference a SQL-capable integration in the same workspace.
 
@@ -89,7 +96,7 @@ For input blocks, put block-type configuration in `metadata` and keep `content` 
 
 Before updating, call `get_notebook` and identify the target block ID, its current type and content, and its visible SQL integration when relevant. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
 
-Send the full replacement `content`; partial snippets are not merged. For SQL blocks, `update_block` can change `content`, `integrationId`, or both in one call, following the same `integrationId` rules as block creation. `update_block` cannot change a block's type, update arbitrary metadata, delete a block, or edit saved input defaults; say so instead of claiming those changes were applied.
+Send the full replacement `content`; partial snippets are not merged. For SQL blocks, `update_block` can change `content`, `integrationId`, or both in one call, following the same `integrationId` rules as block creation. `update_block` cannot change a block's type, update arbitrary metadata, or edit saved input defaults; say so instead of claiming those changes were applied. Use `delete_block` to remove a block.
 
 ## Block Reordering
 

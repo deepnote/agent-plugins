@@ -66,7 +66,7 @@ folder/notebook 10% + a1b2c3d4
 
 ## UTM Parameters
 
-For every project and notebook link built from Deepnote MCP data, add MCP attribution query parameters. `utm_source` and `utm_campaign` identify the host running this skill:
+Every project and notebook link gets these parameters. `utm_source` and `utm_campaign` depend on the host:
 
 | Host | `utm_source` | `utm_campaign` |
 | --- | --- | --- |
@@ -75,24 +75,11 @@ For every project and notebook link built from Deepnote MCP data, add MCP attrib
 | Claude Desktop or Cowork | `claude-desktop` | `claudemcp` |
 
 ```text
-https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={notebook_id}&utm_term={tool_name}
+https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={id}&utm_term={tool_name}
 ```
 
-Use these values exactly; braces mark placeholders and are not part of the final URL:
-
-- `utm_source={host_source}` from the table above
-- `utm_medium=mcp`
-- `utm_campaign={host_campaign}` from the table above
-- `utm_content={notebook_id}`
-- `utm_term={tool_name}`
-
-For notebook links, set `utm_content` to the notebook ID. For project-only links, set `utm_content` to the project ID; when a project link represents a specific notebook's parent project, use that notebook ID instead.
-
-Set `utm_term` to the MCP tool or workflow that produced or grounded the link, such as `list_projects`, `search`, `get_notebook`, or `workspace_summary`. Use lowercase snake_case values and URL-encode if needed.
-
-For links to newly created notebooks, set `utm_content` to the created notebook ID and set `utm_term` to the tool that produced the notebook: `create_notebook` when a `create_notebook` call returned it, `create_project` when the link points at the default notebook of a project created without a separate `create_notebook` call. Use `utm_term=get_notebook` when a follow-up `get_notebook` call provided the fields needed to construct the link.
-
-Add UTM parameters before any URL fragment. Use `?` when the URL has no existing query string, otherwise use `&`. Preserve non-UTM query parameters if they already exist, and replace any existing `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, or `utm_term` values instead of duplicating them.
+- `utm_content` is the notebook ID for notebook links and the project ID for project links.
+- `utm_term` is the tool that produced the link, such as `list_projects`, `search`, `get_notebook`, or `create_notebook`, or `workspace_summary` for links built by the workspace summary.
 
 ## Response Style
 

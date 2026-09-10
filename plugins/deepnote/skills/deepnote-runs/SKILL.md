@@ -13,7 +13,7 @@ Tool arguments, pagination, and the capability boundary are defined in `deepnote
 2. Identify whether the user needs a fresh run, a specific run's status, or run history.
 3. If the notebook has inputs and the user supplied values, map them to the exact input `name` fields from `get_notebook` (see Run Inputs).
 4. Before starting a run, inspect the notebook for cells that print environment variables, secrets, credentials, or entire configuration objects, and for cells that start servers, send bulk or network requests, write files, call external or production-like systems, or mutate data. Name the risk and get explicit confirmation before running.
-5. Use `create_run` only for full-notebook execution by `notebookId`; the hosted server does not expose single-block execution.
+5. Use `create_run` by `notebookId`. Running specific blocks requires live mode, which changes the user's open editor session, so do that only when the user asks for it.
 6. If `create_run` returns an error, report it and stop. Do not call `get_run` unless a run ID was returned. This includes user-facing errors such as workspace or parallel run limits.
 7. Poll `get_run` until the run reaches a terminal state or it is clear the run is still in progress, following Snapshot Delivery below.
 

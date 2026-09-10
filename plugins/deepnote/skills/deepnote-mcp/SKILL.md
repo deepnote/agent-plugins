@@ -1,6 +1,6 @@
 ---
 name: deepnote-mcp
-description: Use when a task mentions Deepnote, the Deepnote MCP server, Deepnote docs, projects, workspaces, notebooks, blocks, integrations, API keys, or notebook runs. Entry point that routes to the other Deepnote skills.
+description: Use when a task mentions Deepnote, the Deepnote MCP server, Deepnote docs, projects, workspaces, notebooks, blocks, integrations, API keys, or notebook runs. Shared rules for all Deepnote skills.
 ---
 
 # Deepnote MCP
@@ -12,10 +12,6 @@ Use the Deepnote MCP server as the primary interface for hosted Deepnote state. 
 If the Deepnote MCP server is not available in the current session, say that clearly and ask the user to connect or configure it. The hosted endpoint is `https://deepnote.com/mcp`; it accepts an OAuth sign-in or a Deepnote personal API key sent as a bearer token. Do not pretend to have inspected Deepnote state.
 
 The plugin registers the hosted server under the MCP server id `deepnote`.
-
-When the server is connected and the user asks what is available, begin with this sentence before details:
-
-Deepnote MCP can identify the current workspace, search resources, list projects and integrations, inspect notebooks, create and edit notebook structure, map integration usage and cached table structure, read Deepnote docs, start notebook runs, and fetch run status and history; if you are not registered yet, register at deepnote.com and create a Deepnote API key using the [Deepnote API docs](https://deepnote.com/docs/deepnote-api).
 
 ## Tool Catalogue
 
@@ -35,27 +31,13 @@ This is the only place that documents tool arguments. The other Deepnote skills 
 - `create_block`: create a block in a notebook. Requires `notebookId` and `type`; accepts optional `content`, `metadata`, zero-based `position` (omitted means append), `includeNotebookBlockIds`, and SQL-only `integrationId`.
 - `update_block`: replace an existing block's content and/or SQL integration. Requires `blockId`; accepts `content`, SQL-only `integrationId`, or both, and at least one of them.
 - `reorder_notebook_blocks`: move one or more existing blocks. Requires `notebookId`, non-empty unique `blockIds` in the desired moved-block order, and `placement` of `{ "type": "start" }`, `{ "type": "end" }`, or `{ "type": "after", "blockId": "anchor-block-id" }`.
-- `create_run`: start a full notebook run by `notebookId`, optionally with `inputs` keyed by notebook input name.
+- `create_run`: start a notebook run by `notebookId`, optionally with `inputs` keyed by notebook input name.
 - `list_notebook_runs`: list historical notebook runs newest first, with `pageSize` (default 20) and `pageToken` pagination. Rows carry `runId`, `notebookId`, `status`, `createdAt`, and `completedAt`.
-- `get_run`: fetch run status, errors, completion time, and run snapshots. Optional `snapshotDelivery` is `"downloadUrl"` (the default when omitted) or `"inline"`.
+- `get_run`: fetch run status, errors, completion time, and run snapshots. Optional `snapshotDelivery` is `"downloadUrl"` (the default when omitted), `"inline"`, or `"blocks"`.
 - `list_docs`: return the Deepnote docs navigation tree.
 - `get_doc`: fetch a Deepnote documentation article by slug.
 
-This list is a documented subset, not a complete inventory. Some servers also advertise `publish_static_site` and `update_project`. Before telling a user that a Deepnote action is impossible, check the tools the connected server actually advertises in the current session, and never claim to have used a tool that is not exposed there.
-
-## Routing
-
-| User asks for | Go to | Primary tools | Best output |
-| --- | --- | --- | --- |
-| Workspace status, heartbeat, overview, inventory, active or scheduled notebooks | `deepnote-workspace`, Workspace Summary | `get_me`, `list_projects`, `list_integrations`, `get_notebook` | Health line, key counts, notebook summary table, notable findings |
-| Integrations, cached tables or columns, data connections, "what uses Snowflake" | `deepnote-workspace`, Integration Mapping | `list_integrations`, `get_integration`, the three usage tools | Cached structure and direct project, notebook, or block usage references |
-| A specific notebook: contents, inputs, SQL, blocks, review, safety | `deepnote-notebooks`, Inspection | `search`, `get_notebook`, `list_integrations` | Notebook brief, status table, inputs table, block map, cautions |
-| Create a project or notebook, add, update, or reorder blocks, scaffold content | `deepnote-notebooks`, Editing | `get_notebook`, `create_project`, `create_notebook`, `create_block`, `update_block`, `reorder_notebook_blocks` | Created or updated IDs and links, final block order when relevant |
-| Run, rerun, run with inputs, run status or history | `deepnote-runs` | `get_notebook`, `create_run`, `list_notebook_runs`, `get_run` | Run table with IDs, status, inputs, result or first actionable error |
-| "Why did it fail?", "is it stuck?", debug a run | `deepnote-runs`, Reporting Results | `list_notebook_runs`, `get_run`, `get_notebook` | Debugging report with likely cause and safe next step |
-| Project, notebook, or workspace links | `deepnote-links` | `get_me`, `list_projects` or `search`, `get_notebook` | Markdown links with workspace-aware URLs and UTM attribution |
-| Static dashboard or HTML site publishing, unpublishing, viewer API access | `deepnote-static-sites` | `publish_static_site`, `update_project` | Canonical site URL, sharing state, viewer API state |
-| Deepnote product or API how-to questions | General Rules below | `list_docs`, `get_doc` | Concise answer grounded in the fetched doc |
+This list is a documented subset, not a complete inventory. Before telling a user that a Deepnote action is impossible, check the tools the connected server actually advertises in the current session, and never claim to have used a tool that is not exposed there.
 
 ## General Rules
 
@@ -71,10 +53,13 @@ This list is a documented subset, not a complete inventory. Some servers also ad
 - Do not expose the bearer token or any secret values from integrations or notebook inputs. Refer to secret names only.
 - Avoid downloading or printing large datasets. Sample, summarize, or aggregate unless the user explicitly asks for an export.
 - Do not paste `snapshotDownloadUrl` values into answers unless the user asks for a download or file handoff. Snapshot handling is defined in `deepnote-runs`.
-- Treat notebook execution as potentially stateful and costly. `create_run` starts a full notebook run, not a single-cell run.
+- Treat notebook execution as potentially stateful and costly.
 - Treat project, notebook, and block creation, block updates, and block reordering as persistent write actions. Resolve targets carefully and report affected IDs.
 - If a tool returns `isError`, surface the user-facing error message concisely.
+- Capability boundary: the hosted server can create projects, notebooks, and blocks, update, reorder, and delete blocks, rename and duplicate notebooks, create, inspect, attach, and detach integrations, and enable or disable static-site sharing and viewer API access. `publish_static_site` writes only beneath the static-site root. It cannot upload arbitrary project files or change schedules, permissions, environments, hardware, package versions, credentials, or secrets. Do not claim to have changed any of those through MCP, and do not tell a user that something is impossible without checking the advertised tools first.
 
 ## Response Style
+
+Keep responses grounded in Deepnote state: project name, notebook name, block labels, execution status, and relevant links when the MCP server provides them or when `deepnote-links` can build them safely. If a task cannot be completed through the Deepnote MCP server, explain the missing capability and offer the nearest safe next step.
 
 Default to brief, information-dense answers. Lead with the answer, use tables, counts, and status labels, and include only the highest-signal findings. Do not include long explanations, raw snapshots, presigned snapshot URLs, full block contents, or exhaustive notebook lists unless the user asks for more detail. When MCP does not expose a detail, say `Not visible via MCP` rather than inferring it from names.
