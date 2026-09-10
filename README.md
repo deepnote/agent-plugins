@@ -2,7 +2,7 @@
 
 Use Deepnote from Codex, Claude Code, or other AI agents. This repo serves all Deepnote agent plugins.
 
-The plugin connects the agent to the hosted Deepnote MCP server at `https://deepnote.com/mcp` and ships skills that teach it how to work with Deepnote workspaces, projects, notebooks, integrations, docs, and notebook runs. One plugin directory, `plugins/deepnote`, serves every host: each host reads its own manifest, and all of them share the same skills and MCP configuration.
+The plugin connects the agent to the hosted Deepnote MCP server at `https://deepnote.com/mcp` and ships skills that teach it how to work with Deepnote workspaces, projects, notebooks, integrations, docs, and notebook runs.
 
 ## Install
 
@@ -13,7 +13,7 @@ The plugin connects the agent to the hosted Deepnote MCP server at `https://deep
 /plugin install deepnote@deepnote
 ```
 
-Then run `/mcp`, choose the Deepnote server, and sign in with OAuth in the browser. To pin a branch or tag, use `/plugin marketplace add deepnote/agent-plugins@main`.
+Then run `/mcp`, choose the Deepnote server, and sign in with OAuth in the browser. OAuth is the only option in Claude Code.
 
 ### Codex
 
@@ -28,26 +28,13 @@ Then sign in with OAuth:
 codex mcp login deepnote
 ```
 
-or use a personal API key instead, see [Authentication](#authentication). To pin a branch, tag, or commit, add `--ref main` to the marketplace command.
+Alternatively, you can use a personal API key instead. Create one in Deepnote under account settings, **API keys**, **Add API key**. Export it in the environment Codex starts from and restart Codex:
 
-## Authentication
+```bash
+export DEEPNOTE_MCP_TOKEN="<your-deepnote-api-key>"
+```
 
-The hosted Deepnote MCP server accepts either an OAuth sign-in or a Deepnote personal API key.
-
-- **OAuth.** Claude Code starts it from `/mcp`, Codex from `codex mcp login deepnote`. You pick the workspace to authorize in the browser and the host stores the tokens. There is no key to manage.
-- **Personal API key.** Create one in Deepnote and export it as `DEEPNOTE_MCP_TOKEN` in the environment Codex starts from, then restart Codex. When the variable is set, Codex sends it as a bearer token instead of using OAuth. Claude Code ignores this variable and always uses OAuth.
-
-Personal API keys act with the permissions of the user who created them. A viewer key has viewer capabilities, an editor key has editor capabilities, and an admin key has admin capabilities.
-
-### Create a Deepnote API key
-
-1. Open Deepnote.
-2. Go to account settings.
-3. Open **API keys**.
-4. Choose **Add API key** under **Personal API keys**.
-5. Give the key a name, generate it, and copy it immediately.
-
-Deepnote shows the generated key only once. Store it somewhere safe, and revoke it from the same settings page if it is no longer needed. Deepnote API docs: https://deepnote.com/docs/deepnote-api
+When the variable is set, Codex uses it and skips OAuth. Deepnote API docs: https://deepnote.com/docs/deepnote-api
 
 ## What the plugin can do
 
@@ -62,25 +49,15 @@ Through the hosted MCP server the agent can:
 - Read Deepnote docs
 - Publish a small HTML/CSS/JavaScript site into a project and toggle its sharing, when the server advertises `publish_static_site`
 
-It cannot execute a single block, browse live database schemas, upload arbitrary project files, or change schedules, permissions, environments, hardware, credentials, or secrets.
-
-The skills under `plugins/deepnote/skills` are the agent-facing documentation for these workflows. Anything the agent should know belongs there, not in this README, which no host loads.
-
 ## Good first prompts
 
-- `Search my Deepnote workspace for customer retention notebooks.`
 - `Which Deepnote workspace am I connected to?`
-- `Give me links to my Deepnote projects.`
-- `Inspect this Deepnote notebook and summarize its inputs.`
-- `Create a Deepnote project named Revenue Analysis.`
-- `Create a notebook in this Deepnote project and add starter markdown and code blocks.`
-- `Update this Deepnote notebook block with the revised SQL.`
-- `Add a SQL block to this notebook using my Snowflake integration.`
+- `Search my Deepnote workspace for customer retention notebooks.`
+- `Inspect this Deepnote notebook and summarize it.`
 - `Move these Deepnote notebook blocks to the top of the notebook.`
-- `Show me the recent runs for this Deepnote notebook.`
 - `Run this Deepnote notebook with customer_name set to Acme.`
+- `Show me the recent runs for this Deepnote notebook.`
 - `List Deepnote integrations matching Snowflake.`
-- `Show cached tables for my Snowflake integration.`
 - `Show me where this Deepnote integration is used.`
 - `Look up the Deepnote docs for scheduled notebooks.`
 
@@ -88,10 +65,10 @@ The skills under `plugins/deepnote/skills` are the agent-facing documentation fo
 
 ```
 .agents/plugins/marketplace.json       Codex marketplace
-.claude-plugin/marketplace.json        Claude Code marketplace
+.claude-plugin/marketplace.json        Claude marketplace
 plugins/deepnote/
   .codex-plugin/plugin.json            Codex manifest
-  .claude-plugin/plugin.json           Claude Code manifest
+  .claude-plugin/plugin.json           Claude manifest
   .mcp.json                            Hosted MCP server, shared by all hosts
   skills/                              Agent-facing skills, shared by all hosts
   assets/                              Icon
@@ -143,6 +120,3 @@ Things to know:
 - A project, notebook, or integration is missing: the signed-in user, or the API key's creator, needs access to it.
 - Creating or editing fails with `Insufficient permissions`: use an editor or admin key, or a user with edit access to the project.
 
-## License
-
-Apache-2.0. See [LICENSE](LICENSE).
