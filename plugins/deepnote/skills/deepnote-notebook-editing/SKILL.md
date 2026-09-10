@@ -1,36 +1,42 @@
 ---
 name: deepnote-notebook-editing
-description: Use when creating Deepnote projects or notebooks, adding, updating, or reordering blocks or cells, scaffolding notebook content, inserting SQL/code/markdown/input blocks, or otherwise editing notebook structure through the Deepnote MCP server.
+description: Use when creating Deepnote projects or notebooks, renaming or duplicating notebooks, adding, updating, deleting, or reordering blocks or cells, scaffolding notebook content, inserting SQL/code/markdown/input blocks, or otherwise editing notebook structure through the Deepnote MCP server.
 ---
 
 # Deepnote Notebook Editing
 
 ## When To Use
 
-Use this skill when the user asks you to create a Deepnote project, create a notebook, add or revise a block or cell, move or reorder blocks, scaffold starter notebook content, insert code, SQL, markdown, or input blocks, or make a structural notebook edit supported by the current MCP write tools.
+Use this skill when the user asks you to create a Deepnote project, create, rename, or duplicate a notebook, add, revise, or delete a block or cell, move or reorder blocks, scaffold starter notebook content, insert code, SQL, markdown, or input blocks, or make a structural notebook edit supported by the current MCP write tools.
 
-This workflow requires the Deepnote MCP server to expose the write tools needed for the requested edit. Use `create_project`, `create_notebook`, and `create_block` for creation workflows; use `update_block` for changing existing block content or SQL integration; use `reorder_notebook_blocks` for moving existing blocks. If the required tool is not visible in the current session, do not claim editing support; explain which MCP tool is missing.
+This workflow requires the Deepnote MCP server to expose the write tools needed for the requested edit. Use `create_project`, `create_notebook`, and `create_block` for creation workflows; use `update_notebook` and `duplicate_notebook` for notebook-level changes; use `update_block` for changing existing block content or SQL integration; use `delete_block` for removing a block; use `reorder_notebook_blocks` for moving existing blocks. If the required tool is not visible in the current session, do not claim editing support; explain which MCP tool is missing.
 
 The current editing surface covered by this skill is:
 
-- `create_project`: create a new project. Requires `name`; accepts optional `folderId`.
+- `create_project`: create a new project. Requires `name`; accepts optional `folderId`. Resolve `folderId` with `list_folders` when the user names a folder.
 - `create_notebook`: create an empty notebook in a project. Requires `projectId`; accepts optional `name`.
+- `update_notebook`: rename a notebook. Requires `notebookId` and `name`. Rename is the only supported change; naming a notebook `Init` designates it as the project init notebook, which can run as a prelude to other notebooks in the project.
+- `duplicate_notebook`: duplicate a notebook inside its current project. Requires `notebookId`. The copy receives an auto-generated unique name; there is no target project or name parameter.
 - `create_block`: create a block in a notebook. Requires `notebookId` and `type`; accepts optional `content`, `metadata`, `position`, `includeNotebookBlockIds`, and SQL-only `integrationId`.
 - `update_block`: update an existing block. Requires `blockId`; accepts `content`, SQL-only `integrationId`, or both. At least one of `content` or `integrationId` is required.
+- `delete_block`: permanently delete a block. Requires `blockId`. Returns 404 if the block no longer exists.
 - `reorder_notebook_blocks`: move one or more existing blocks in a notebook. Requires `notebookId`, non-empty unique `blockIds` in the desired moved-block order, and `placement`.
 
 ## Editing Workflow
 
-1. Resolve ambiguous names and IDs before writing. Use `get_me` for workspace identity, `search` or `list_projects` for projects/notebooks, `get_notebook` for current block order, and `list_integrations` for SQL connections.
-2. Treat `create_project`, `create_notebook`, and `create_block` as non-idempotent. Repeating the same call creates another resource.
+1. Resolve ambiguous names and IDs before writing. Use `get_me` for workspace identity, `search` or `list_projects` for projects/notebooks, `list_folders` for a target folder, `get_project` for a project's existing notebooks, `get_notebook` for current block order, and `list_integrations` for SQL connections.
+2. Treat `create_project`, `create_notebook`, `duplicate_notebook`, and `create_block` as non-idempotent. Repeating the same call creates another resource.
 3. Use `create_project` only when the user wants a new project. A created project includes a default empty notebook; if the workflow later calls `create_notebook`, the new `create_notebook` result becomes the active notebook for blocks, verification, links, and run prompts.
 4. Use `create_notebook` only when adding an empty notebook to a project. It does not accept starter blocks; capture the returned notebook ID and create blocks afterward with `create_block` in that exact notebook.
-5. Use `create_block` for each new block. Omit `position` to append, or pass a zero-based `position` when placement matters.
-6. Use `update_block` when changing an existing block. It updates content and/or SQL integration in place; it does not create a new block.
-7. Pass `includeNotebookBlockIds: true` when the final block order matters, especially for ordered inserts or multi-block scaffolds.
-8. Use `reorder_notebook_blocks` when moving existing blocks. It preserves the relative order of blocks omitted from `blockIds` and returns the final active block order.
-9. Verify meaningful edits with `get_notebook` after block creation, block update, or block reordering when order, integration attachment, or multi-block content matters.
-10. Do not run the notebook after editing unless the user explicitly asks for execution or confirms a final run prompt. After creating or scaffolding a notebook, ask whether to run that exact notebook in Deepnote.
+5. Use `update_notebook` to rename a notebook. Notebook names are unique within a project, so a duplicate name returns a 409 error.
+6. Use `duplicate_notebook` when the user wants a copy of a notebook in the same project, for example to experiment without touching the original. Then use `update_notebook` on the returned notebook ID if the user wants a specific name, and treat the copy as the active notebook for later edits. Notebooks cannot be duplicated or moved across projects.
+7. Use `create_block` for each new block. Omit `position` to append, or pass a zero-based `position` when placement matters.
+8. Use `update_block` when changing an existing block. It updates content and/or SQL integration in place; it does not create a new block.
+9. Use `delete_block` only when the user clearly asks to remove a block. Read the block's ID, type, and content from `get_notebook` first, and when several blocks match the description, confirm which one before deleting.
+10. Pass `includeNotebookBlockIds: true` when the final block order matters, especially for ordered inserts or multi-block scaffolds.
+11. Use `reorder_notebook_blocks` when moving existing blocks. It preserves the relative order of blocks omitted from `blockIds` and returns the final active block order.
+12. Verify meaningful edits with `get_notebook` after block creation, block update, block deletion, or block reordering when order, integration attachment, or multi-block content matters.
+13. Do not run the notebook after editing unless the user explicitly asks for execution or confirms a final run prompt. After creating or scaffolding a notebook, ask whether to run that exact notebook in Deepnote.
 
 ## Creation Target Tracking
 
@@ -62,7 +68,11 @@ Use `update_block` when the user wants to revise an existing cell or block. Send
 
 For SQL blocks, `update_block` can update `content`, `integrationId`, or both in a single call. Resolve the integration with `list_integrations` when the user gives a connection name, then pass the connection as top-level `integrationId`. Do not put `sql_integration_id` in metadata.
 
-Do not pass `integrationId` for non-SQL blocks. The MCP tools do not expose block type changes, arbitrary metadata updates, deletion, or saved input-default edits through `update_block`; say so instead of claiming those changes were applied.
+Do not pass `integrationId` for non-SQL blocks. `update_block` does not accept `metadata` and cannot change a block's type or saved input defaults; say so instead of claiming those changes were applied. To change metadata, create a replacement block with `create_block` and remove the old one with `delete_block`. To remove a block outright, use `delete_block`, not `update_block` with empty content.
+
+## Block Deletion Guidance
+
+Before deleting, call `get_notebook` and identify the target block by ID, type, and content. Deletion is permanent through MCP; there is no undo tool. Delete one block per `delete_block` call and report each deleted block ID. If the user asks to clear a notebook, list the blocks you would delete and confirm before proceeding. A 404 response means the block was already gone; treat it as already done rather than retrying.
 
 ## Block Reordering Guidance
 
@@ -80,8 +90,8 @@ After reordering, report the moved block IDs and final order when useful. If the
 
 ## Response Style
 
-After a successful edit, report the created project, active notebook, and block names/IDs when relevant, plus placement or final block order when useful. Include Deepnote links when they can be safely constructed with `deepnote-links`; for newly created notebooks, the notebook link must use the active notebook ID from `create_notebook` or the default notebook created by `create_project` when no separate notebook was created.
+After a successful edit, report the created project, active notebook, renamed or duplicated notebook, and block names/IDs when relevant, plus deleted block IDs and placement or final block order when useful. Include Deepnote links when they can be safely constructed with `deepnote-links`; for newly created notebooks, the notebook link must use the active notebook ID from `create_notebook` or the default notebook created by `create_project` when no separate notebook was created.
 
 If a notebook was created or scaffolded and not already run, end with a short question asking whether to run the active notebook in Deepnote now. Do not call `create_run` until the user confirms; after confirmation, use `deepnote-data-execution` and pass the active notebook ID.
 
-If a write tool returns an error, surface the user-facing message concisely and name the likely fix: missing permission, missing target resource, invalid block type, invalid position or placement, duplicate notebook name, suspended project, or incompatible SQL integration.
+If a write tool returns an error, surface the user-facing message concisely and name the likely fix: missing permission, missing target resource, invalid block type, invalid position or placement, duplicate notebook name, notebook limit reached, suspended project, or incompatible SQL integration.

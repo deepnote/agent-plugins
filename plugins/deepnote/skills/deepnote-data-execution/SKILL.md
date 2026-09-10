@@ -16,6 +16,7 @@ Use the Deepnote MCP server for the execution and context it currently exposes:
 - `create_run` to start full-notebook execution, optionally with input values.
 - `list_notebook_runs` for historical notebook runs, newest first, with `pageSize` and `pageToken` pagination.
 - `get_run` for run status, errors, completion time, and run snapshots. When `snapshotDelivery` is omitted, it returns a short-lived `snapshotDownloadUrl` when a snapshot is available; this is equivalent to `snapshotDelivery: "downloadUrl"`. Request `snapshotDelivery: "inline"` only when you need `snapshotContent` in the tool response.
+- `get_project` for a project's notebooks with `isInit`, `isScheduled`, and `lastRunAt`, its attached integrations, its file inventory, and its static-site settings, when execution context spans a whole project or when checking whether an init notebook runs before others.
 - `get_me` for the authenticated workspace, API key type, and caller access level when execution permissions or workspace identity matter.
 
 Use `get_integration` for cached table and column structure when the user asks about integration schemas, tables, columns, or whether a table exists. Do not claim live database introspection, table previews, query previews, file metadata, or environment configuration unless a current MCP tool explicitly exposes that data.
@@ -74,7 +75,7 @@ When snapshot content, snapshot download URLs, or errors include sensitive, prop
 
 ## Configuration Changes
 
-The hosted Deepnote MCP server can create, inspect, attach, and detach integrations, and it can enable or disable static-site sharing and viewer API access. It cannot upload the website files behind a static site, and it cannot change schedules, permissions, environments, hardware, credentials, or secrets.
+The hosted Deepnote MCP server can create, inspect, attach, and detach integrations, publish files beneath a project's static-site root, enable or disable static-site sharing and viewer API access, and serve an existing project file as a Streamlit app. It cannot upload arbitrary project files, and it cannot change schedules, permissions, environments, hardware, credentials, or secrets.
 
 So do not claim to change package versions, environment images, hardware, credentials, secrets, scheduled runs, or permissions through MCP. Equally, do not tell a user that integration or static-site sharing changes are impossible through MCP; check the tools the connected server advertises in the current session, and use them if they are exposed.
 

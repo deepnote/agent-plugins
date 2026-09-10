@@ -5,7 +5,17 @@ description: Use when a task asks for Deepnote URLs, links, project links, noteb
 
 # Deepnote Links
 
-Use this skill to build user-facing Deepnote web links from MCP data. Prefer links grounded in `get_me`, `list_projects`, `search`, and `get_notebook` responses instead of guessing from names alone. Every project and notebook link built from Deepnote MCP data must include the UTM parameters below.
+Use this skill to build user-facing Deepnote web links from MCP data. Prefer links returned by `generate_project_url`, then links grounded in `get_me`, `list_projects`, `search`, and `get_notebook` responses, instead of guessing from names alone. Every project and notebook link built from Deepnote MCP data must include the UTM parameters below.
+
+## Server-Generated Links
+
+`generate_project_url` returns the canonical absolute URL for a project or notebook and is the preferred source for a single link:
+
+- Pass `projectId` for a project link, `notebookId` for a notebook link, or both. When only `notebookId` is given, the project is derived from it.
+- The returned `url` already uses the workspace slug and the current routing rules, so use it as returned and only append the UTM parameters below.
+- It returns `Project not found` or `Notebook not found` when the caller cannot access the resource, including when the notebook belongs to a different project than the `projectId` given. Do not retry with guessed IDs.
+
+Fall back to the manual URL shapes below when the tool is not advertised, when building many links at once from a `list_projects` or `search` response where a call per row would be wasteful, or when a workspace link is needed, since the tool only covers projects and notebooks.
 
 ## Inputs To Resolve
 
@@ -67,7 +77,9 @@ folder/notebook 10% + a1b2c3d4
 
 - File paths, when exposed and requested, append after the project segment as `/{encodeURIComponent(filePath)}`.
 - Cell or block anchors append as `#anchor`.
-- Only generate published app links such as `/app/{authorSlug}/{projectSegment}` or `/streamlit-apps/{streamlitAppId}` when MCP data explicitly exposes the published author slug or Streamlit app ID.
+- Only generate published app links such as `/app/{authorSlug}/{projectSegment}` when MCP data explicitly exposes the published author slug.
+- For Streamlit apps, use the `url` returned by `create_streamlit_app` or `list_streamlit_apps` as-is. Do not assemble `/streamlit-apps/{id}` paths by hand.
+- Static site links come from the `url` returned by `publish_static_site` or from `staticFiles.url` in `get_project`.
 
 ## UTM Parameters
 
@@ -93,7 +105,7 @@ Use these values exactly; braces mark placeholders and are not part of the final
 
 For notebook links, set `utm_content` to the notebook ID. For project-only links, set `utm_content` to the project ID; when a project link represents a specific notebook's parent project, use that notebook ID instead.
 
-Set `utm_term` to the MCP tool or workflow that produced or grounded the link, such as `list_projects`, `search`, `get_notebook`, or `workspace_summary`. Use lowercase snake_case values and URL-encode if needed.
+Set `utm_term` to the MCP tool or workflow that produced or grounded the link, such as `generate_project_url`, `list_projects`, `search`, `get_notebook`, or `workspace_summary`. Use lowercase snake_case values and URL-encode if needed.
 
 For links to newly created notebooks, set `utm_content` to the created notebook ID and set `utm_term` to the tool that produced the notebook: `create_notebook` when a `create_notebook` call returned it, `create_project` when the link points at the default notebook of a project created without a separate `create_notebook` call. Use `utm_term=get_notebook` when a follow-up `get_notebook` call provided the fields needed to construct the link.
 

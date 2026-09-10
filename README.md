@@ -1,6 +1,6 @@
 # Deepnote Plugin for Codex and Claude Code
 
-Use Deepnote from Codex or Claude Code to identify the current workspace, search resources, inspect notebooks, create projects, notebooks, and blocks, generate project and notebook links, list projects and integrations, map integration usage, read Deepnote docs, start notebook runs, and summarize run status and outputs.
+Use Deepnote from Codex or Claude Code to identify the current workspace, search resources, inspect projects and notebooks, create projects, notebooks, and blocks, rename, duplicate, and edit notebooks, attach integrations, publish static sites and Streamlit apps, generate project and notebook links, list projects, folders, and integrations, map integration usage, read Deepnote docs, start notebook runs, and summarize run status and outputs.
 
 One plugin directory serves both hosts. Codex reads `.codex-plugin/plugin.json`, Claude Code reads `.claude-plugin/plugin.json`, and both load the same `skills/` directory and `.mcp.json`. Guidance below that names Codex applies equally to Claude Code.
 
@@ -77,28 +77,43 @@ The hosted Deepnote MCP server currently exposes these tools:
 - `search`: search workspace resources across projects, notebooks, blocks, and integrations
 - `get_me`: get the calling API key, creator user, workspace, and access level
 - `list_projects`: list workspace projects, optionally filtered by name, with cursor pagination
+- `list_folders`: list workspace folders with parent relationships, to resolve a `folderId` for `create_project`
+- `get_project`: inspect a project's notebooks, attached integrations, file inventory, and static-site settings
+- `update_project`: enable or disable static-site sharing and viewer API access
 - `list_integrations`: list workspace integrations, optionally filtered by name or type
 - `get_integration`: inspect integration details and cached table structure
 - `list_integration_project_usages`: list projects connected to an integration
 - `list_integration_notebook_usages`: list notebooks containing SQL blocks that use an integration
 - `list_integration_block_usages`: list SQL blocks that use an integration
+- `create_integration`: create a workspace integration of an API-creatable type (admin only)
+- `attach_integration`: attach an existing integration to a project
+- `detach_integration`: detach an integration from a project
 - `get_notebook`: inspect notebook details, blocks, input variables, and last-run metadata
 - `create_project`: create a new project, optionally inside a folder
 - `create_notebook`: create an empty notebook inside a project
+- `update_notebook`: rename a notebook
+- `duplicate_notebook`: duplicate a notebook inside its project
 - `create_block`: create a new block in a notebook
 - `update_block`: update an existing block's content or SQL integration
+- `delete_block`: delete a block
 - `reorder_notebook_blocks`: move existing blocks within a notebook
+- `copy_file`: copy a file from one project into another at the same path
+- `publish_static_site`: publish HTML, CSS, and JavaScript files as the project's static site
+- `create_streamlit_app`: serve an existing project file as a Streamlit app
+- `list_streamlit_apps`: list a project's Streamlit apps with their URLs
+- `get_streamlit_app_status`: check whether a Streamlit app is running, starting, or unavailable
+- `generate_project_url`: return the canonical URL for a project or notebook
 - `create_run`: start a full notebook run, optionally with input values
 - `list_notebook_runs`: list recent and historical notebook runs
 - `get_run`: inspect run status, errors, completion time, and snapshot content when available
 - `list_docs`: list Deepnote docs sections and article slugs
 - `get_doc`: fetch a Deepnote documentation article by slug
 
-The hosted MCP server also exposes capabilities beyond the tools listed above. It can create, inspect, attach, and detach integrations, and it can enable or disable static-site sharing and viewer API access. Once `publish_static_site` appears in the connected server's advertised tools, it can also publish a small HTML/CSS/JavaScript site in one call. Treat the list above as the documented subset rather than a complete inventory; check the tools advertised by the connected server before telling a user that something is impossible.
+The skills in `plugins/deepnote/skills` describe how to use each tool. The server can change between plugin releases, so check the tools advertised by the connected server before telling a user that something is impossible.
 
-The hosted MCP server cannot execute a single block, browse database schemas directly, upload arbitrary project files, or change schedules, permissions, environments, hardware, credentials, or secrets.
+The hosted MCP server cannot execute a single block, browse database schemas directly, upload arbitrary project files, delete projects, notebooks, or Streamlit apps, or change schedules, permissions, environments, hardware, credentials, or secrets.
 
-When Deepnote MCP is connected, Codex should introduce it in one sentence: Deepnote MCP can identify the current workspace, search resources, list projects and integrations, inspect notebooks, create and edit notebook structure, map integration usage and cached table structure, read Deepnote docs, start notebook runs, and fetch run status and history; if you are not registered yet, register at deepnote.com and ready your Deepnote API key from the [Deepnote API docs](https://deepnote.com/docs/deepnote-api).
+When Deepnote MCP is connected, Codex should introduce it in one sentence: Deepnote MCP can identify the current workspace, search resources, list projects, folders, and integrations, inspect projects and notebooks, create and edit notebook structure, duplicate, rename, and delete notebook content, attach and manage integrations, publish static sites and Streamlit apps, generate project links, read Deepnote docs, start notebook runs, and fetch run status and history; if you are not registered yet, register at deepnote.com and ready your Deepnote API key from the [Deepnote API docs](https://deepnote.com/docs/deepnote-api).
 
 By default, Deepnote responses should be brief, concise, and information dense. Codex should lead with the answer, use tables and counts where they improve scanning, and avoid long explanations, raw snapshots, full logs, or exhaustive block listings unless the user asks for more detail.
 
@@ -126,8 +141,8 @@ When a notebook includes cells that print environment variables, credentials, la
 
 Author HTML, CSS, and JavaScript in the agent's local workspace. When a shell and the Deepnote CLI
 are available, publish the finished directory with `deepnote publish ./dist --project-id <uuid>`.
-When deployment must happen through hosted MCP, use `publish_static_site` only if the connected
-server advertises it. Supply the final file contents in that one tool call; do not use notebook
+When deployment must happen through hosted MCP, use `publish_static_site`. Supply the final file
+contents in that one tool call; do not use notebook
 execution or generic project-file writes as a deployment workaround.
 
 `publish_static_site` enables sharing after its file operations succeed and returns the canonical
@@ -331,6 +346,13 @@ claude plugin validate --strict . && claude plugin validate --strict plugins/dee
 - `Show cached tables for my Snowflake integration.`
 - `Show me where this Deepnote integration is used.`
 - `Look up the Deepnote docs for scheduled notebooks.`
+- `Show me what is in this Deepnote project.`
+- `Create a project called Churn Model in the Data Science folder.`
+- `Duplicate this notebook and rename the copy to Experiment v2.`
+- `Delete the empty code block at the end of this notebook.`
+- `Attach my Snowflake integration to this project.`
+- `Serve apps/dashboard.py from this project as a Streamlit app and tell me when it is running.`
+- `Copy utils/helpers.py from this project into my Sales Analysis project.`
 
 ## Troubleshooting
 
@@ -343,7 +365,10 @@ claude plugin validate --strict . && claude plugin validate --strict plugins/dee
 - If a SQL block creation fails, confirm `integrationId` references a SQL integration in the same workspace and pass it as a top-level field.
 - If a notebook run with inputs fails before starting, check that each input key matches a `get_notebook` input `name` and that each value matches the input type.
 - If a run fails, ask Codex to inspect the run with `get_run` and summarize the error.
-- If Codex suggests an unsupported edit or environment change, remember the boundary: the hosted MCP server can create projects, notebooks, and blocks, update and reorder blocks, create, inspect, attach, and detach integrations, and enable or disable static-site sharing and viewer API access. If `publish_static_site` is advertised, it can publish files only beneath the static-site root; it still cannot upload arbitrary project files or change schedules, permissions, environments, hardware, credentials, or secrets.
+- If attaching or detaching an integration fails with a 409 error, the integration is already in the requested state; check `get_project` and report it rather than retrying.
+- If a Streamlit app stays `starting` for more than a few minutes, the app may have crashed on boot; ask the user to check the app logs in Deepnote.
+- If `copy_file` fails with `File already exists`, the target project already has that path; it never overwrites.
+- If Codex suggests an unsupported edit or environment change, remember the boundary: the hosted MCP server can create projects, notebooks, and blocks, rename and duplicate notebooks, update, delete, and reorder blocks, copy files between projects, create, inspect, attach, and detach integrations, publish files beneath the static-site root, enable or disable static-site sharing and viewer API access, and serve existing files as Streamlit apps. It cannot upload arbitrary project files, delete projects, notebooks, or Streamlit apps, or change schedules, permissions, environments, hardware, credentials, or secrets.
 
 ## License
 
