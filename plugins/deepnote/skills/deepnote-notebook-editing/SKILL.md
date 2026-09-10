@@ -7,7 +7,7 @@ description: Use when creating Deepnote projects or notebooks, adding, updating,
 
 ## When To Use
 
-Use this skill when the user asks Codex to create a Deepnote project, create a notebook, add or revise a block or cell, move or reorder blocks, scaffold starter notebook content, insert code, SQL, markdown, or input blocks, or make a structural notebook edit supported by the current MCP write tools.
+Use this skill when the user asks you to create a Deepnote project, create a notebook, add or revise a block or cell, move or reorder blocks, scaffold starter notebook content, insert code, SQL, markdown, or input blocks, or make a structural notebook edit supported by the current MCP write tools.
 
 This workflow requires the Deepnote MCP server to expose the write tools needed for the requested edit. Use `create_project`, `create_notebook`, and `create_block` for creation workflows; use `update_block` for changing existing block content or SQL integration; use `reorder_notebook_blocks` for moving existing blocks. If the required tool is not visible in the current session, do not claim editing support; explain which MCP tool is missing.
 

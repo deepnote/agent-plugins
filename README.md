@@ -1,24 +1,30 @@
-# Deepnote Codex Plugin
+# Deepnote Plugin for Codex and Claude Code
 
-Use Deepnote from Codex to identify the current workspace, search resources, inspect notebooks, create projects, notebooks, and blocks, generate project and notebook links, list projects and integrations, map integration usage, read Deepnote docs, start notebook runs, and summarize run status and outputs.
+Use Deepnote from Codex or Claude Code to identify the current workspace, search resources, inspect notebooks, create projects, notebooks, and blocks, generate project and notebook links, list projects and integrations, map integration usage, read Deepnote docs, start notebook runs, and summarize run status and outputs.
+
+One plugin directory serves both hosts. Codex reads `.codex-plugin/plugin.json`, Claude Code reads `.claude-plugin/plugin.json`, and both load the same `skills/` directory and `.mcp.json`. Guidance below that names Codex applies equally to Claude Code.
 
 ## What Is Included
 
 - Codex marketplace manifest in `.agents/plugins/marketplace.json`
-- Deepnote plugin manifest in `plugins/deepnote/.codex-plugin/plugin.json`
-- Hosted Deepnote MCP configuration in `plugins/deepnote/.mcp.json`
-- Deepnote skills for workspace search, link generation, docs lookup, integration mapping, notebook inspection, notebook editing, and notebook execution workflows
+- Claude Code marketplace manifest in `.claude-plugin/marketplace.json`
+- Codex plugin manifest in `plugins/deepnote/.codex-plugin/plugin.json`
+- Claude Code plugin manifest in `plugins/deepnote/.claude-plugin/plugin.json`
+- Hosted Deepnote MCP configuration in `plugins/deepnote/.mcp.json`, read by both hosts
+- Deepnote skills, shared by both hosts, for workspace search, link generation, docs lookup, integration mapping, notebook inspection, notebook editing, and notebook execution workflows
 - Deepnote branding assets
 
 ## Requirements
 
 - A Deepnote account with access to the target workspace
-- A Deepnote personal API key
-- Codex with plugin support
+- Codex with plugin support, or Claude Code with plugin support
+- For Codex only: a Deepnote personal API key. Claude Code signs in with OAuth and needs no key.
 
 Deepnote personal API keys act with the permissions of the user who created them. A viewer key has viewer capabilities, an editor key has editor capabilities, and an admin key has admin capabilities.
 
 ## Create A Deepnote API Key
+
+Codex needs a personal API key. Claude Code uses OAuth instead, so skip this section for Claude Code.
 
 1. Open Deepnote.
 2. Go to account settings.
@@ -32,18 +38,13 @@ Deepnote API docs: https://deepnote.com/docs/deepnote-api
 
 ## Configure Authentication
 
-Set the API key in the environment where Codex runs:
-
-```bash
-export DEEPNOTE_MCP_TOKEN="<your-deepnote-api-key>"
-```
-
-The plugin reads that value through `plugins/deepnote/.mcp.json`:
+Both hosts read the hosted Deepnote MCP server from `plugins/deepnote/.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "deepnote": {
+      "type": "http",
       "url": "https://deepnote.com/mcp",
       "bearer_token_env_var": "DEEPNOTE_MCP_TOKEN"
     }
@@ -51,9 +52,23 @@ The plugin reads that value through `plugins/deepnote/.mcp.json`:
 }
 ```
 
-The hosted Deepnote MCP endpoint authenticates requests as `Authorization: Bearer <token>`.
+Keep the `type` field. Claude Code silently skips a server entry that has a `url` but no `type`; Codex accepts the field as well. `bearer_token_env_var` is Codex-only and Claude Code ignores it.
 
-This marketplace marks authentication as `ON_INSTALL`, so Codex may show Deepnote as requiring setup when you install the plugin. Deepnote does not use an OAuth sign-in flow in Codex yet; setup means making `DEEPNOTE_MCP_TOKEN` available to the Codex process and restarting Codex before using the plugin.
+### Codex
+
+Set the API key in the environment where Codex runs:
+
+```bash
+export DEEPNOTE_MCP_TOKEN="<your-deepnote-api-key>"
+```
+
+Codex reads that value through `bearer_token_env_var` and sends it as `Authorization: Bearer <token>`.
+
+The Codex marketplace marks authentication as `ON_INSTALL`, so Codex may show Deepnote as requiring setup when you install the plugin. Deepnote does not use an OAuth sign-in flow in Codex yet; setup means making `DEEPNOTE_MCP_TOKEN` available to the Codex process and restarting Codex before using the plugin.
+
+### Claude Code
+
+No API key or environment variable is needed. Claude Code reads the same `.mcp.json`, ignores `bearer_token_env_var`, and connects with OAuth. The hosted Deepnote MCP endpoint supports OAuth 2.0 with dynamic client registration. After the plugin is enabled, run `/mcp` in Claude Code, pick the Deepnote server, and complete the sign-in in the browser. Do not add an `Authorization` header to this configuration; when a header is present, Claude Code skips the OAuth flow.
 
 ## Capabilities
 
@@ -202,7 +217,9 @@ If `create_run` fails before returning a run ID, Codex should surface the MCP/AP
 
 ## Install From GitHub
 
-After this repo is pushed to GitHub, add it as a Codex marketplace:
+### Codex
+
+Add this repo as a Codex marketplace:
 
 ```bash
 codex plugin marketplace add deepnote/codex-plugin
@@ -216,7 +233,20 @@ To pin a branch, tag, or commit:
 codex plugin marketplace add deepnote/codex-plugin --ref main
 ```
 
+### Claude Code
+
+Add this repo as a Claude Code marketplace and install the plugin from it:
+
+```
+/plugin marketplace add deepnote/codex-plugin
+/plugin install deepnote@deepnote
+```
+
+Then run `/mcp`, choose the Deepnote server, and complete the OAuth sign-in. To pin a branch or tag, use `/plugin marketplace add deepnote/codex-plugin@main`.
+
 ## Install Locally For Development
+
+### Codex
 
 Codex discovers plugins through the repo marketplace at `.agents/plugins/marketplace.json`. To test this checkout directly:
 
@@ -263,6 +293,27 @@ After you change plugin files, upgrade the marketplace or remove and re-add it, 
 codex plugin marketplace upgrade deepnote
 ```
 
+### Claude Code
+
+Claude Code discovers plugins through the repo marketplace at `.claude-plugin/marketplace.json`. To load this checkout for one session without installing anything:
+
+```bash
+claude --plugin-dir /absolute/path/to/codex-plugin/plugins/deepnote
+```
+
+To install from the checkout instead:
+
+```
+/plugin marketplace add /absolute/path/to/codex-plugin
+/plugin install deepnote@deepnote
+```
+
+Validate both manifests before opening a pull request:
+
+```bash
+claude plugin validate --strict . && claude plugin validate --strict plugins/deepnote
+```
+
 ## Good First Prompts
 
 - `Search my Deepnote workspace for customer retention notebooks.`
@@ -283,7 +334,8 @@ codex plugin marketplace upgrade deepnote
 
 ## Troubleshooting
 
-- If authentication fails, confirm `DEEPNOTE_MCP_TOKEN` is set in the environment Codex actually starts from.
+- If authentication fails in Codex, confirm `DEEPNOTE_MCP_TOKEN` is set in the environment Codex actually starts from.
+- If Claude Code shows the Deepnote server as needing authentication, run `/mcp` and complete the OAuth sign-in. If the server shows as failed instead, check that no `Authorization` header was added to the plugin's MCP configuration. If Claude Code lists no Deepnote server at all, check that the entry in `plugins/deepnote/.mcp.json` still has `"type": "http"`.
 - If a resource is missing, check that the API key creator has access to the workspace, project, notebook, or integration.
 - If project listings look incomplete, check whether `pagination.hasMore` is true and continue with `pagination.nextPageToken`.
 - If creating a project, notebook, or block fails with `Insufficient permissions`, use an editor or admin API key, or project edit access where applicable.

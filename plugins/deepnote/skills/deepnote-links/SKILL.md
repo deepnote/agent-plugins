@@ -71,17 +71,23 @@ folder/notebook 10% + a1b2c3d4
 
 ## UTM Parameters
 
-For every project and notebook link built from Deepnote MCP data, add Codex/OpenAI MCP attribution query parameters:
+For every project and notebook link built from Deepnote MCP data, add MCP attribution query parameters. `utm_source` and `utm_campaign` identify the host running this skill:
+
+| Host | `utm_source` | `utm_campaign` |
+| --- | --- | --- |
+| Codex | `codex` | `openaimcp` |
+| Claude Code | `claude-code` | `claudemcp` |
+| Claude Desktop or Cowork | `claude-desktop` | `claudemcp` |
 
 ```text
-https://deepnote.com/<path>?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content={notebook_id}&utm_term={tool_name}
+https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={notebook_id}&utm_term={tool_name}
 ```
 
 Use these values exactly; braces mark placeholders and are not part of the final URL:
 
-- `utm_source=codex`
+- `utm_source={host_source}` from the table above
 - `utm_medium=mcp`
-- `utm_campaign=openaimcp`
+- `utm_campaign={host_campaign}` from the table above
 - `utm_content={notebook_id}`
 - `utm_term={tool_name}`
 
@@ -95,7 +101,7 @@ Add UTM parameters before any URL fragment. Use `?` when the URL has no existing
 
 ## Response Style
 
-Return Markdown links with human-readable labels:
+Return Markdown links with human-readable labels. Shown here with Codex values; in Claude Code use `utm_source=claude-code&utm_campaign=claudemcp` instead:
 
 ```markdown
 [Project Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=project-id&utm_term=list_projects)

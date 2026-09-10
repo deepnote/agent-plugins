@@ -1,6 +1,6 @@
 {
   "name": "deepnote",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Search Deepnote workspaces, inspect notebooks, generate links, map integrations, read docs, and run notebooks from Codex.",
   "author": {
     "name": "Deepnote",
