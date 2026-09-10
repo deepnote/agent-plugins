@@ -68,6 +68,36 @@ Use `snapshotDelivery: "inline"` when the user asks you to inspect outputs, summ
 
 If the current MCP tool schema does not expose `snapshotDelivery`, use the fields returned by `get_run` as-is and do not invent `snapshotContent` or `snapshotDownloadUrl`.
 
+## Dataframe Outputs Are Paginated
+
+A snapshot stores whatever the kernel produced, and for a dataframe the kernel produces one
+page of rows. The block's `application/vnd.deepnote.dataframe.v3+json` output carries
+`row_count` with the true total and a `rows` array holding only the current page, which
+defaults to **10 rows**. A query ending in `LIMIT 100` still shows 10 rows in `rows` with
+`row_count: 100`. The `text/plain` and `text/html` outputs on the same block are the library's
+own truncated representations and are not fuller. No larger copy exists anywhere: fetching the
+snapshot a different way returns the same 10 rows.
+
+So when reporting results from a snapshot, read `row_count` alongside `rows` and say which one
+you are quoting. Report counts, totals, and column structure from the output's own metadata,
+and describe `rows` as a sample rather than the result set. Do not tell a user a query returned
+10 rows when `row_count` says otherwise.
+
+When the user needs the actual rows, two options exist and both act before the run:
+
+- Have the notebook publish the data as a JSON output, which is not paginated:
+  `display({'application/json': {'schema': 'my-result/v1', 'rows': df.to_dict('records')}}, raw=True)`.
+  Keep the payload to what is genuinely needed; aggregate in the notebook.
+- Create the block with `metadata.deepnote_table_state.pageSize` set to the row count the
+  notebook returns. See `deepnote-notebook-editing`. `update_block` cannot change metadata, so
+  an existing block must be recreated.
+
+Row values inside `rows` are not type-stable: missing values arrive as strings, not `null`, and
+every row carries a `_deepnote_index_column` that is not part of the data. `deepnote-dynamic-apps`
+documents the encoding; apply the same care when quoting values out of a snapshot.
+
+If the page reading these results is a published Deepnote site, use `deepnote-dynamic-apps`.
+
 ## Sensitive Outputs
 
 When snapshot content, snapshot download URLs, or errors include sensitive, proprietary, personal, or production-like data, minimize exposure in the response. Summarize the result, shape, quality issues, aggregates, or failure mode instead of dumping raw records, presigned URLs, or long logs.

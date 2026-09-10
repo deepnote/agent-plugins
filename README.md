@@ -139,6 +139,13 @@ Published files are served to people who can view the project. Never put API key
 `.env` contents, or other secrets in them. Viewer API access is a separate explicit setting; enable
 it only when the browser app needs the viewer-scoped Deepnote run API.
 
+Pages can also be dynamic. Deepnote hosts a browser client at
+`https://deepnote.com/static/app-client/v1.js` that exposes `window.Deepnote.connect()`, letting a
+published page run the project's notebooks as the signed-in viewer and render the results. The
+[`deepnote-dynamic-apps`](plugins/deepnote/skills/deepnote-dynamic-apps/SKILL.md) skill covers the
+client API, the viewer token handshake, what viewer tokens can reach, and how to get full dataframe
+rows into a page instead of the 10-row default.
+
 ## Workspace Identity And Project Pagination
 
 Use `get_me` when a response needs to name the authenticated workspace, debug access issues, or report the caller's access level. The response includes API key metadata, user metadata, workspace `{ id, name, slug }`, and `accessLevel`.
@@ -331,6 +338,7 @@ claude plugin validate --strict . && claude plugin validate --strict plugins/dee
 - `Show cached tables for my Snowflake integration.`
 - `Show me where this Deepnote integration is used.`
 - `Look up the Deepnote docs for scheduled notebooks.`
+- `Build a Deepnote dashboard page that runs this notebook and charts the full result.`
 
 ## Troubleshooting
 

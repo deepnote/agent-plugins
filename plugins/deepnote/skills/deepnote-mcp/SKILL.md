@@ -69,6 +69,7 @@ Route common user requests before choosing tools:
 | Integrations, cached tables/columns, data connections, "what uses Snowflake/BigQuery/Postgres/etc." | Integration Mapping Workflow | `list_integrations`, `get_integration`, `list_integration_project_usages`, `list_integration_notebook_usages`, `list_integration_block_usages` | Cached structure, integration table, and direct project/notebook/block usage references |
 | Project, notebook, or workspace links/URLs | `deepnote-links` skill | `get_me`, `list_projects` or `search`, optional `get_notebook` | Markdown links using workspace-aware Deepnote URL shapes with host-specific MCP UTM attribution |
 | Static dashboard or HTML site authoring, publishing, unpublishing, viewer API access | Static Site Workflow | local authoring, `publish_static_site`, `update_project` | Canonical site URL, publish counts, sharing state, viewer API state |
+| A published page that runs notebooks from the browser, live dashboards, reading run results in JavaScript, full dataframe rows in a page | `deepnote-dynamic-apps` skill | `get_notebook`, `create_block`, `create_run`, `get_run`, `update_project` | Verified result shape, page source, canonical site URL, viewer API state |
 | Deepnote product docs or API how-to questions | Docs Workflow | `list_docs`, `get_doc` | Concise answer grounded in fetched docs, with relevant doc title or slug |
 | "Why failed?", "stuck?", "debug this run" | Run Debugging Workflow | `get_run`, `get_notebook` | Failure summary, first actionable error from inline snapshot content when needed, likely fix, safe next step |
 
@@ -149,6 +150,10 @@ Use `deepnote-notebook-editing` when creating projects, notebooks, or blocks or 
    `staticFiles.sharingEnabled` and/or `staticFiles.apiAccessEnabled`. Disabling sharing also disables
    viewer API access; re-enabling sharing serves the retained files again.
 6. Do not execute a notebook to write published files and do not look for generic file-write tools.
+7. If the page must run notebooks or read run results in the browser, use the
+   `deepnote-dynamic-apps` skill. It covers the hosted browser client, the viewer token
+   handshake, the three endpoints viewer tokens can reach, and how to get full dataframe rows
+   into a page.
 
 Publishing makes the files available through the project's shared static site. Never include API
 keys, personal tokens, `.env` contents, or other secrets. Viewer API access is separately opt-in and

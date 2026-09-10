@@ -54,6 +54,26 @@ For SQL blocks:
 
 For input blocks, put block-type configuration in `metadata` and keep `content` for the visible/default textual content when applicable. Preserve existing notebook naming and variable conventions when adding inputs near related blocks.
 
+For SQL and code blocks whose result is a dataframe, the number of rows stored in the block's
+output is fixed when the block runs, and defaults to 10 regardless of how many rows the query
+returned. When the rows themselves matter downstream — a published page, a report, a later
+`get_run` read — set the page size at creation time:
+
+```json
+{
+  "notebookId": "...",
+  "type": "sql",
+  "content": "SELECT ... LIMIT 100",
+  "integrationId": "...",
+  "metadata": { "deepnote_table_state": { "pageSize": 100 } }
+}
+```
+
+Keep `pageSize` close to the row count the block actually returns; a large value inflates every
+stored output and every snapshot read. `update_block` cannot change `metadata`, so a block that
+already exists has to be recreated to change this. When the consumer is a published page,
+prefer having the notebook emit an explicit JSON result instead — see `deepnote-dynamic-apps`.
+
 ## Block Update Guidance
 
 Before updating a block, call `get_notebook` and identify the target block ID, current type, current content, and visible SQL integration when relevant. Ask a clarifying question only when the target block or requested replacement is ambiguous.
