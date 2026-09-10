@@ -16,7 +16,7 @@ When the user asks for a workspace summary, heartbeat, overview, or which notebo
 3. Use `list_integrations` to collect integration names, types, and IDs.
 4. Use `get_notebook` for notebooks that need connection details or recent run detail.
 5. Identify scheduled notebooks from `isScheduled`.
-6. Identify active notebooks from recency signals such as `lastRunAt`, a current or recent `lastRunId`, or an explicitly requested run status from `get_run`. MCP does not expose live kernel or session state, so say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
+6. Identify active notebooks from `lastRunAt` or an explicitly requested run status from `get_run`. MCP does not expose live kernel or session state, so say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
 7. Map integration usage with the usage tools when direct usage matters. If usage was not checked, write `Usage not checked`; if a checked usage tool returns nothing, write `None found`.
 8. Build project and notebook links with `deepnote-links`, using `utm_term=workspace_summary` for links created by this workflow rather than by a single tool result.
 
@@ -40,7 +40,7 @@ Summary table, for workspace summaries, notebook inventories, project breakdowns
 Row rules:
 
 - For a specific project or notebook, filter the table to it.
-- For large workspaces, keep individual rows for scheduled notebooks, recently run notebooks, and notebooks with visible integrations, then collapse each project's remaining notebooks into one `N more notebooks` row. A collapsed row is `No` for Scheduled, shows the most recent visible `lastRunAt` among its notebooks or `None seen`, and lists their integrations or `None found`.
+- For large workspaces, keep individual rows for scheduled notebooks, recently run notebooks, and notebooks with visible integrations, then collapse each project's remaining notebooks into one `N more notebooks` row. A collapsed row is `No` for Scheduled, shows the most recent visible `lastRunAt` among its notebooks or `None seen`, and lists their integrations, `None found` when usage was checked, or `Usage not checked`.
 - `Last Run Seen` is the notebook's visible `lastRunAt`, or a checked `get_run` completion time when more current. Format dates in UTC as `YYYY-MM-DD HH:MM UTC`. Never write `None seen` when a run ID or run timestamp is visible.
 - `Integrations` uses names and IDs from `list_integrations`, mapped with the usage tools when direct usage matters. Visible references from `get_notebook` blocks or inline run snapshots may also be mentioned. Do not infer usage from integration names alone; write `None found` only when checked usage or visible references return no connection.
 

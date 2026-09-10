@@ -8,7 +8,7 @@ The plugin connects the agent to the hosted Deepnote MCP server at `https://deep
 
 ### Claude Code
 
-```
+```text
 /plugin marketplace add deepnote/agent-plugins
 /plugin install deepnote@deepnote
 ```
@@ -63,7 +63,7 @@ Through the hosted MCP server the agent can:
 
 ## Repository layout
 
-```
+```text
 .agents/plugins/marketplace.json       Codex marketplace
 .claude-plugin/marketplace.json        Claude marketplace
 plugins/deepnote/
@@ -85,7 +85,7 @@ claude --plugin-dir /path/to/agent-plugins/plugins/deepnote
 
 Or install from the checkout. In Claude Code:
 
-```
+```text
 /plugin marketplace add /path/to/agent-plugins
 /plugin install deepnote@deepnote
 ```

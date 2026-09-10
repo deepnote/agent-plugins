@@ -19,7 +19,7 @@ This is the only place that documents tool arguments. The other Deepnote skills 
 
 - `get_me`: return the calling API key, creator user, workspace, and workspace access level.
 - `search`: search workspace resources across projects, notebooks, blocks, and integrations.
-- `list_projects`: list workspace projects, optionally filtered by name, with cursor pagination (`pageSize`, `pageToken`, `pagination.nextPageToken`, `pagination.hasMore`). Project and notebook rows expose `isScheduled`, `lastRunAt`, and `lastRunId` when available.
+- `list_projects`: list workspace projects, optionally filtered by name, with cursor pagination (`pageSize`, `pageToken`, `pagination.nextPageToken`, `pagination.hasMore`). Notebook rows expose `isInit`, `isScheduled`, and `lastRunAt`.
 - `list_integrations`: list workspace integrations, optionally filtered by name or type.
 - `get_integration`: get integration details and cached table structure, optionally filtered by `databaseName`, `schemaName`, or exact `tableName`.
 - `list_integration_project_usages`: list projects connected to an integration, optionally narrowed to one `projectId`.
@@ -33,7 +33,7 @@ This is the only place that documents tool arguments. The other Deepnote skills 
 - `reorder_notebook_blocks`: move one or more existing blocks. Requires `notebookId`, non-empty unique `blockIds` in the desired moved-block order, and `placement` of `{ "type": "start" }`, `{ "type": "end" }`, or `{ "type": "after", "blockId": "anchor-block-id" }`.
 - `create_run`: start a notebook run by `notebookId`, optionally with `inputs` keyed by notebook input name.
 - `list_notebook_runs`: list historical notebook runs newest first, with `pageSize` (default 20) and `pageToken` pagination. Rows carry `runId`, `notebookId`, `status`, `createdAt`, and `completedAt`.
-- `get_run`: fetch run status, errors, completion time, and run snapshots. Optional `snapshotDelivery` is `"downloadUrl"` (the default when omitted), `"inline"`, or `"blocks"`.
+- `get_run`: fetch run `status`, `error`, `createdAt`, `completedAt`, and run snapshots. Optional `snapshotDelivery` is `"downloadUrl"` (the default when omitted), `"inline"`, or `"blocks"`.
 - `list_docs`: return the Deepnote docs navigation tree.
 - `get_doc`: fetch a Deepnote documentation article by slug.
 
@@ -54,7 +54,7 @@ This list is a documented subset, not a complete inventory. Before telling a use
 - Avoid downloading or printing large datasets. Sample, summarize, or aggregate unless the user explicitly asks for an export.
 - Do not paste `snapshotDownloadUrl` values into answers unless the user asks for a download or file handoff. Snapshot handling is defined in `deepnote-runs`.
 - Treat notebook execution as potentially stateful and costly.
-- Treat project, notebook, and block creation, block updates, and block reordering as persistent write actions. Resolve targets carefully and report affected IDs.
+- Treat creating, updating, reordering, and deleting blocks, creating projects and notebooks, attaching or detaching integrations, and changing static-site sharing as persistent write actions. Do them only when the user asked for that change, resolve targets carefully, and report affected IDs.
 - If a tool returns `isError`, surface the user-facing error message concisely.
 - Capability boundary: the hosted server can create projects, notebooks, and blocks, update, reorder, and delete blocks, rename and duplicate notebooks, create, inspect, attach, and detach integrations, and enable or disable static-site sharing and viewer API access. `publish_static_site` writes only beneath the static-site root. It cannot upload arbitrary project files or change schedules, permissions, environments, hardware, package versions, credentials, or secrets. Do not claim to have changed any of those through MCP, and do not tell a user that something is impossible without checking the advertised tools first.
 

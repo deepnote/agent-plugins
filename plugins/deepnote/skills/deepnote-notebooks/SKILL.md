@@ -45,7 +45,7 @@ Help the user decide what the notebook does, whether it is safe to run, and what
 | --- | --- | --- | --- |
 | `1` | `sql` | `SELECT demo.gapminder sample` | `Clickhouse (clickhouse)` |
 
-5. Add `Cautions` only when actionable: cells that print environment variables, hard-coded credentials, mutating external calls, long-running servers, large dataset dumps, missing inputs, failed or pending last runs, SQL blocks whose integration is not visible, or integration usage that was not checked when it matters.
+5. Add `Cautions` only when actionable: cells that print secrets, environment variables, or configuration objects, hard-coded credentials, mutating external calls, long-running servers, large dataset dumps, missing inputs, failed or pending last runs, SQL blocks whose integration is not visible, or integration usage that was not checked when it matters.
 6. End with `Useful Next Actions` only when it helps: run the notebook, inspect the latest run, list recent runs, map integrations, summarize outputs, or review risky cells.
 
 Keep raw code excerpts short; summarize large cells and mention block IDs when useful. If execution was not run, say so plainly and mention the remaining risk. For larger reviews, summarize relevant sections rather than listing every block.
@@ -59,7 +59,7 @@ Keep raw code excerpts short; summarize large cells and mention block IDs when u
 
 ## Editing Workflow
 
-Use this workflow to create a project or notebook, add or revise a block or cell, move or reorder blocks, scaffold starter content, or insert code, SQL, markdown, or input blocks. It requires the write tools `create_project`, `create_notebook`, `create_block`, `update_block`, and `reorder_notebook_blocks`. If a required tool is not visible in the current session, do not claim editing support; explain which tool is missing.
+Use this workflow to create a project or notebook, add or revise a block or cell, move or reorder blocks, scaffold starter content, or insert code, SQL, markdown, or input blocks. Each edit needs its tool: `create_project`, `create_notebook`, `create_block`, `update_block`, `reorder_notebook_blocks`, or `delete_block`. If the tool for the requested edit is not in the current session, say which one is missing instead of claiming support.
 
 1. Resolve ambiguous names and IDs before writing: `get_me` for workspace identity, `search` or `list_projects` for projects and notebooks, `get_notebook` for the current block order, and `list_integrations` for SQL connections.
 2. Treat `create_project`, `create_notebook`, and `create_block` as non-idempotent. Repeating a call creates another resource.
