@@ -14,14 +14,9 @@ Use this skill to build user-facing Deepnote web links from MCP data. Prefer lin
 3. Resolve notebook links with `get_notebook` when possible. Use the notebook `id`, `name`, and parent project data.
 4. If the exact project or notebook is ambiguous, ask a short clarification or provide a compact candidate list with links only for unambiguous matches.
 
-## Creation Link Rules
+## Links After Creation
 
-When linking after a creation workflow, use the resource IDs returned by the write tools as the source of truth:
-
-- If `create_notebook` returned a notebook, build the notebook link for that returned notebook ID. Do not substitute the first notebook on the project or the default notebook created by `create_project`.
-- If `create_project` created a project and no separate `create_notebook` call was made, use the default notebook created with the project only when a notebook link is needed for that active notebook.
-- If both the project default notebook and a later `create_notebook` result are present, the later `create_notebook` result is the notebook to link unless the user explicitly asks for the default notebook.
-- If parent project data is missing for the created notebook, call `get_notebook` for the target notebook ID or use the known project ID from the creation workflow before constructing the link.
+Link the active notebook as defined by the Active Notebook Rule in `deepnote-notebooks`: the notebook returned by `create_notebook` when one was called, otherwise the default notebook of the project returned by `create_project`. If parent project data is missing for that notebook, call `get_notebook` for its ID or use the project ID from the creation workflow before building the link.
 
 ## URL Shapes
 
