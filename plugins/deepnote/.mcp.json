@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "deepnote": {
+      "type": "http",
+      "url": "https://deepnote.com/mcp",
+      "bearer_token_env_var": "DEEPNOTE_MCP_TOKEN"
+    }
+  }
+}

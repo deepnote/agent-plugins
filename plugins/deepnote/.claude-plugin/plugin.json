@@ -9,11 +9,11 @@
   "homepage": "https://github.com/deepnote/codex-plugin",
   "repository": "https://github.com/deepnote/codex-plugin",
   "license": "Apache-2.0",
-  "keywords": ["deepnote", "mcp", "notebooks", "data", "analytics"],
-  "mcpServers": {
-    "deepnote": {
-      "type": "http",
-      "url": "https://deepnote.com/mcp"
-    }
-  }
+  "keywords": [
+    "deepnote",
+    "mcp",
+    "notebooks",
+    "data",
+    "analytics"
+  ]
 }

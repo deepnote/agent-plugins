@@ -18,12 +18,7 @@
     "analytics"
   ],
   "skills": "./skills/",
-  "mcpServers": {
-    "deepnote": {
-      "url": "https://deepnote.com/mcp",
-      "bearer_token_env_var": "DEEPNOTE_MCP_TOKEN"
-    }
-  },
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Deepnote",
     "shortDescription": "Work with Deepnote workspaces, projects, notebooks, and docs from Codex.",

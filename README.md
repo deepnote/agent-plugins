@@ -2,14 +2,15 @@
 
 Use Deepnote from Codex or Claude Code to identify the current workspace, search resources, inspect notebooks, create projects, notebooks, and blocks, generate project and notebook links, list projects and integrations, map integration usage, read Deepnote docs, start notebook runs, and summarize run status and outputs.
 
-One plugin directory serves both hosts. Codex reads `.codex-plugin/plugin.json`, Claude Code reads `.claude-plugin/plugin.json`, and both load the same `skills/` directory. Guidance below that names Codex applies equally to Claude Code.
+One plugin directory serves both hosts. Codex reads `.codex-plugin/plugin.json`, Claude Code reads `.claude-plugin/plugin.json`, and both load the same `skills/` directory and `.mcp.json`. Guidance below that names Codex applies equally to Claude Code.
 
 ## What Is Included
 
 - Codex marketplace manifest in `.agents/plugins/marketplace.json`
 - Claude Code marketplace manifest in `.claude-plugin/marketplace.json`
-- Codex plugin manifest in `plugins/deepnote/.codex-plugin/plugin.json`, with the hosted Deepnote MCP server declared inline
-- Claude Code plugin manifest in `plugins/deepnote/.claude-plugin/plugin.json`, with the hosted Deepnote MCP server declared inline
+- Codex plugin manifest in `plugins/deepnote/.codex-plugin/plugin.json`
+- Claude Code plugin manifest in `plugins/deepnote/.claude-plugin/plugin.json`
+- Hosted Deepnote MCP configuration in `plugins/deepnote/.mcp.json`, read by both hosts
 - Deepnote skills, shared by both hosts, for workspace search, link generation, docs lookup, integration mapping, notebook inspection, notebook editing, and notebook execution workflows
 - Deepnote branding assets
 
@@ -37,6 +38,22 @@ Deepnote API docs: https://deepnote.com/docs/deepnote-api
 
 ## Configure Authentication
 
+Both hosts read the hosted Deepnote MCP server from `plugins/deepnote/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "deepnote": {
+      "type": "http",
+      "url": "https://deepnote.com/mcp",
+      "bearer_token_env_var": "DEEPNOTE_MCP_TOKEN"
+    }
+  }
+}
+```
+
+Keep the `type` field. Claude Code silently skips a server entry that has a `url` but no `type`; Codex accepts the field as well. `bearer_token_env_var` is Codex-only and Claude Code ignores it.
+
 ### Codex
 
 Set the API key in the environment where Codex runs:
@@ -45,39 +62,13 @@ Set the API key in the environment where Codex runs:
 export DEEPNOTE_MCP_TOKEN="<your-deepnote-api-key>"
 ```
 
-The Codex manifest at `plugins/deepnote/.codex-plugin/plugin.json` declares the server inline and reads that value:
-
-```json
-{
-  "mcpServers": {
-    "deepnote": {
-      "url": "https://deepnote.com/mcp",
-      "bearer_token_env_var": "DEEPNOTE_MCP_TOKEN"
-    }
-  }
-}
-```
-
-The hosted Deepnote MCP endpoint authenticates requests as `Authorization: Bearer <token>`.
+Codex reads that value through `bearer_token_env_var` and sends it as `Authorization: Bearer <token>`.
 
 The Codex marketplace marks authentication as `ON_INSTALL`, so Codex may show Deepnote as requiring setup when you install the plugin. Deepnote does not use an OAuth sign-in flow in Codex yet; setup means making `DEEPNOTE_MCP_TOKEN` available to the Codex process and restarting Codex before using the plugin.
 
 ### Claude Code
 
-No API key or environment variable is needed. The Claude Code manifest at `plugins/deepnote/.claude-plugin/plugin.json` declares the server inline:
-
-```json
-{
-  "mcpServers": {
-    "deepnote": {
-      "type": "http",
-      "url": "https://deepnote.com/mcp"
-    }
-  }
-}
-```
-
-The hosted Deepnote MCP endpoint supports OAuth 2.0 with dynamic client registration. After the plugin is enabled, run `/mcp` in Claude Code, pick the Deepnote server, and complete the sign-in in the browser. Do not add an `Authorization` header to this configuration; when a header is present, Claude Code skips the OAuth flow.
+No API key or environment variable is needed. Claude Code reads the same `.mcp.json`, ignores `bearer_token_env_var`, and connects with OAuth. The hosted Deepnote MCP endpoint supports OAuth 2.0 with dynamic client registration. After the plugin is enabled, run `/mcp` in Claude Code, pick the Deepnote server, and complete the sign-in in the browser. Do not add an `Authorization` header to this configuration; when a header is present, Claude Code skips the OAuth flow.
 
 ## Capabilities
 
@@ -344,7 +335,7 @@ claude plugin validate --strict . && claude plugin validate --strict plugins/dee
 ## Troubleshooting
 
 - If authentication fails in Codex, confirm `DEEPNOTE_MCP_TOKEN` is set in the environment Codex actually starts from.
-- If Claude Code shows the Deepnote server as needing authentication, run `/mcp` and complete the OAuth sign-in. If the server shows as failed instead, check that no `Authorization` header was added to the plugin's MCP configuration.
+- If Claude Code shows the Deepnote server as needing authentication, run `/mcp` and complete the OAuth sign-in. If the server shows as failed instead, check that no `Authorization` header was added to the plugin's MCP configuration. If Claude Code lists no Deepnote server at all, check that the entry in `plugins/deepnote/.mcp.json` still has `"type": "http"`.
 - If a resource is missing, check that the API key creator has access to the workspace, project, notebook, or integration.
 - If project listings look incomplete, check whether `pagination.hasMore` is true and continue with `pagination.nextPageToken`.
 - If creating a project, notebook, or block fails with `Insufficient permissions`, use an editor or admin API key, or project edit access where applicable.
