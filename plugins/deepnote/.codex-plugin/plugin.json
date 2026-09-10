@@ -1,6 +1,6 @@
 {
   "name": "deepnote",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Search Deepnote workspaces, inspect notebooks, generate links, map integrations, read docs, and run notebooks from Codex.",
   "author": {
     "name": "Deepnote",
@@ -18,7 +18,12 @@
     "analytics"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": {
+    "deepnote": {
+      "url": "https://deepnote.com/mcp",
+      "bearer_token_env_var": "DEEPNOTE_MCP_TOKEN"
+    }
+  },
   "interface": {
     "displayName": "Deepnote",
     "shortDescription": "Work with Deepnote workspaces, projects, notebooks, and docs from Codex.",

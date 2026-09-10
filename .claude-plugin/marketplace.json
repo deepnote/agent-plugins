@@ -1,0 +1,25 @@
+{
+  "name": "deepnote",
+  "owner": {
+    "name": "Deepnote",
+    "url": "https://deepnote.com"
+  },
+  "metadata": {
+    "description": "Deepnote plugin for Claude Code: hosted Deepnote MCP server plus skills for workspace search, notebooks, links, integrations, docs, and notebook runs."
+  },
+  "plugins": [
+    {
+      "name": "deepnote",
+      "source": "./plugins/deepnote",
+      "description": "Search Deepnote workspaces, inspect and edit notebooks, generate links, map integrations, read docs, and run notebooks from Claude Code.",
+      "category": "Data & Analytics",
+      "keywords": [
+        "deepnote",
+        "mcp",
+        "notebooks",
+        "data",
+        "analytics"
+      ]
+    }
+  ]
+}
