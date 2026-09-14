@@ -31,7 +31,7 @@ This is the only place that documents tool arguments. The other Deepnote skills 
 - `create_block`: create a block in a notebook. Requires `notebookId` and `type`; accepts optional `content`, `metadata`, zero-based `position` (omitted means append), `includeNotebookBlockIds`, and SQL-only `integrationId`.
 - `update_block`: replace an existing block's content and/or SQL integration. Requires `blockId`; accepts `content`, SQL-only `integrationId`, or both, and at least one of them.
 - `reorder_notebook_blocks`: move one or more existing blocks. Requires `notebookId`, non-empty unique `blockIds` in the desired moved-block order, and `placement` of `{ "type": "start" }`, `{ "type": "end" }`, or `{ "type": "after", "blockId": "anchor-block-id" }`.
-- `create_run`: start a notebook run by `notebookId`, optionally with `inputs` keyed by notebook input name.
+- `create_run`: start a notebook run by `notebookId`. It accepts optional `inputs` keyed by notebook input name, `detached` (default `true`), `detachedRunStorageMode` (`read_write` or `readonly`, detached runs only), a non-empty unique `blockIds` list (live runs only), and `runDependentBlocks` (requires `blockIds`). For targeted execution, set `detached: false` and pass `blockIds`; omit `blockIds` to run the full notebook.
 - `list_notebook_runs`: list historical notebook runs newest first, with `pageSize` (default 20) and `pageToken` pagination. Rows carry `runId`, `notebookId`, `status`, `createdAt`, and `completedAt`.
 - `get_run`: fetch run `status`, `error`, `createdAt`, `completedAt`, and run snapshots. Optional `snapshotDelivery` is `"downloadUrl"` (the default when omitted), `"inline"`, or `"blocks"`.
 - `list_docs`: return the Deepnote docs navigation tree.

@@ -13,7 +13,7 @@ Tool arguments, pagination, and the capability boundary are defined in `deepnote
 2. Identify whether the user needs a fresh run, a specific run's status, or run history.
 3. If the notebook has inputs and the user supplied values, map them to the exact input `name` fields from `get_notebook` (see Run Inputs).
 4. Before starting a run, inspect the notebook for cells that print environment variables, secrets, credentials, or entire configuration objects, and for cells that start servers, send bulk or network requests, write files, call external or production-like systems, or mutate data. Name the risk and get explicit confirmation before running.
-5. Use `create_run` by `notebookId`. Running specific blocks requires live mode, which changes the user's open editor session, so do that only when the user asks for it.
+5. Use `create_run` by `notebookId`; detached full-notebook execution is the default. Targeted execution updates the live editor session, so do it only when the user asks: set `detached: false` and pass a non-empty unique `blockIds` list. Set `runDependentBlocks: true` only with `blockIds` when downstream blocks should run too.
 6. If `create_run` returns an error, report it and stop. Do not call `get_run` unless a run ID was returned. This includes user-facing errors such as workspace or parallel run limits.
 7. Poll `get_run` until the run reaches a terminal state or it is clear the run is still in progress, following Snapshot Delivery below.
 
@@ -37,7 +37,8 @@ Use `list_notebook_runs` for recent runs, failed runs, run history, or anything 
 This is the single definition of how to handle `get_run` snapshots.
 
 - Omit `snapshotDelivery` for routine status checks. The response then carries `snapshotContent: null` and, when a snapshot exists, a short-lived `snapshotDownloadUrl` to a `.snapshot.deepnote` file. That URL grants access to the snapshot: never paste it into an answer unless the user asks for a download or file handoff, and never fetch it on your own.
-- Request `snapshotDelivery: "inline"` when the user asks you to inspect outputs, summarize results, diagnose a failure from snapshot details, or map references visible in the snapshot. Inline snapshots can be large and sensitive: summarize the relevant blocks, outputs, failures, or data shape instead of dumping raw content.
+- Request `snapshotDelivery: "blocks"` to inspect outputs, summarize results, or diagnose a failure from execution outputs. It returns `snapshotBlocks` with block IDs, types, outputs, and metadata, but no source.
+- Request `snapshotDelivery: "inline"` only when the full snapshot or block source is needed, such as mapping references visible in the snapshot. Inline snapshots can be large and sensitive: summarize the relevant blocks, outputs, failures, or data shape instead of dumping raw content.
 - If the current tool schema does not expose `snapshotDelivery`, use the fields `get_run` returns as they are and do not invent `snapshotContent` or `snapshotDownloadUrl`.
 
 ## Sensitive Outputs
@@ -46,13 +47,13 @@ When snapshot content, download URLs, or errors include sensitive, proprietary, 
 
 ## Reporting Results
 
-For successful runs, include the notebook name or ID, run ID, status, any input overrides that are safe to mention, and the important result from inline snapshot content when you requested it. If you only have a download URL, say a snapshot is available without exposing the URL. For failures, include concise error detail and the next fix to try. Prefer one compact run table plus the most important result or first actionable error; do not paste long logs, raw snapshots, or full outputs by default.
+For successful runs, include the notebook name or ID, run ID, status, any input overrides that are safe to mention, and the important result from snapshot blocks or inline content when you requested it. If you only have a download URL, say a snapshot is available without exposing the URL. For failures, include concise error detail and the next fix to try. Prefer one compact run table plus the most important result or first actionable error; do not paste long logs, raw snapshots, or full outputs by default.
 
 | Field | Value |
 | --- | --- |
 | Notebook | `Notebook name` |
 | Run ID | `run-id` |
-| Status | `success`, `failed`, `pending`, or `running` |
+| Status | `pending`, `running`, `success`, `error`, `internal_error`, or `stopped` |
 | Started | `YYYY-MM-DD HH:MM UTC` |
 | Completed | `YYYY-MM-DD HH:MM UTC` or `Still running` |
 | Inputs | `safe input summary` or `None` |
@@ -62,9 +63,9 @@ For failed or stuck runs, use a debugging report:
 
 | Check | Finding |
 | --- | --- |
-| Run state | `failed`, `pending`, or `running for N minutes` |
+| Run state | `error`, `internal_error`, `stopped`, `pending`, or `running for N minutes` |
 | First actionable error | `short error text` |
 | Likely cause | `missing input`, `missing file`, `server not listening`, `dependency failure`, or `unknown from MCP` |
 | Safe next step | `inspect notebook`, `rerun with inputs`, `start serving notebook`, or `manual Deepnote action needed` |
 
-When inspecting a large snapshot, request inline delivery only when necessary, then summarize block counts, failed blocks, final outputs, and the first actionable error.
+When inspecting a large snapshot, prefer block delivery and summarize block counts, failed blocks, final outputs, and the first actionable error. Request inline delivery only when the full snapshot or block source is necessary.

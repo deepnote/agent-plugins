@@ -1,6 +1,6 @@
 ---
 name: deepnote-workspace
-description: Use for workspace-level questions about Deepnote: workspace summary, heartbeat, overview, inventory of projects and notebooks, scheduled or recently run notebooks, integrations, cached table and column structure, and which projects, notebooks, or SQL blocks use an integration.
+description: "Use for workspace-level questions about Deepnote: workspace summary, heartbeat, overview, inventory of projects and notebooks, scheduled or recently run notebooks, integrations, cached table and column structure, and which projects, notebooks, or SQL blocks use an integration."
 ---
 
 # Deepnote Workspace
@@ -47,7 +47,7 @@ Row rules:
 ## Integration Mapping Workflow
 
 1. Use `list_integrations` to resolve an integration name or type to an ID.
-2. Use `get_integration` for cached structure. The response includes integration details plus `tables`, each with `name`, `schema`, optional `database`, and cached `columns` with names and database-native types. The `databaseName`, `schemaName`, and `tableName` filters apply to cached rows; an empty result means no matching cached structure is visible through MCP, not that the live database lacks the table.
+2. Use `get_integration` for cached structure. The response includes integration details plus `tablesJsonPreview`, the serialized matching cached table structure, and `tablesTruncated`. When `tablesTruncated` is true, the preview contains only the first 50,000 characters and `tableNames` lists all matching table names. The `databaseName`, `schemaName`, and `tableName` filters apply to cached rows; a preview of `[]` means no matching cached structure is visible through MCP, not that the live database lacks the table.
 3. Use `list_integration_project_usages` for connected projects, `list_integration_notebook_usages` for notebooks with SQL blocks that use the integration, and `list_integration_block_usages` for the exact SQL blocks and their content. Narrow any of them with `projectId`.
 4. Say that structure is cached. Do not present it as a live database scan, and do not claim access to row previews, query results, file metadata, or environment configuration unless an exposed MCP tool or a run snapshot provided them.
 

@@ -97,7 +97,7 @@ codex plugin marketplace add /path/to/agent-plugins
 codex plugin add deepnote@deepnote
 ```
 
-After changing plugin files, run `codex plugin marketplace upgrade deepnote` and restart Codex. Claude Code picks up skill edits live in sessions started with `--plugin-dir`; manifest and MCP changes need `/reload-plugins` or a restart.
+After changing plugin files for local Codex testing, give `plugins/deepnote/.codex-plugin/plugin.json` a fresh `+codex.<cachebuster>` version suffix, rerun `codex plugin add deepnote@deepnote`, and start a new Codex thread. Claude Code picks up skill edits live in sessions started with `--plugin-dir`; manifest and MCP changes need `/reload-plugins` or a restart.
 
 Validate both manifests before opening a pull request:
 
@@ -119,4 +119,3 @@ Things to know:
 - Sign-in says the workspace cannot use the MCP connector, or that MCP access is disabled: a workspace admin needs to enable MCP access for that workspace.
 - A project, notebook, or integration is missing: the signed-in user, or the API key's creator, needs access to it.
 - Creating or editing fails with `Insufficient permissions`: use an editor or admin key, or a user with edit access to the project.
-

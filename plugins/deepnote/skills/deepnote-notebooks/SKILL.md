@@ -1,6 +1,6 @@
 ---
 name: deepnote-notebooks
-description: Use when reading, reviewing, creating, editing, or reordering Deepnote notebooks and blocks through the Deepnote MCP server: notebook structure, inputs, SQL, Python, and outputs, creating projects or notebooks, and adding, updating, scaffolding, or moving blocks.
+description: "Use when reading, reviewing, creating, editing, or reordering Deepnote notebooks and blocks through the Deepnote MCP server: notebook structure, inputs, SQL, Python, and outputs, creating projects or notebooks, and adding, updating, scaffolding, or moving blocks."
 ---
 
 # Deepnote Notebooks
