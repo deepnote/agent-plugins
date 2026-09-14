@@ -14,14 +14,9 @@ Use this skill to build user-facing Deepnote web links from MCP data. Prefer lin
 3. Resolve notebook links with `get_notebook` when possible. Use the notebook `id`, `name`, and parent project data.
 4. If the exact project or notebook is ambiguous, ask a short clarification or provide a compact candidate list with links only for unambiguous matches.
 
-## Creation Link Rules
+## Links After Creation
 
-When linking after a creation workflow, use the resource IDs returned by the write tools as the source of truth:
-
-- If `create_notebook` returned a notebook, build the notebook link for that returned notebook ID. Do not substitute the first notebook on the project or the default notebook created by `create_project`.
-- If `create_project` created a project and no separate `create_notebook` call was made, use the default notebook created with the project only when a notebook link is needed for that active notebook.
-- If both the project default notebook and a later `create_notebook` result are present, the later `create_notebook` result is the notebook to link unless the user explicitly asks for the default notebook.
-- If parent project data is missing for the created notebook, call `get_notebook` for the target notebook ID or use the known project ID from the creation workflow before constructing the link.
+Link the active notebook as defined by the Active Notebook Rule in `deepnote-notebooks`: the notebook returned by `create_notebook` when one was called, otherwise the default notebook of the project returned by `create_project`. If parent project data is missing for that notebook, call `get_notebook` for its ID or use the project ID from the creation workflow before building the link.
 
 ## URL Shapes
 
@@ -71,7 +66,7 @@ folder/notebook 10% + a1b2c3d4
 
 ## UTM Parameters
 
-For every project and notebook link built from Deepnote MCP data, add MCP attribution query parameters. `utm_source` and `utm_campaign` identify the host running this skill:
+Every project and notebook link gets these parameters. `utm_source` and `utm_campaign` depend on the host:
 
 | Host | `utm_source` | `utm_campaign` |
 | --- | --- | --- |
@@ -80,24 +75,11 @@ For every project and notebook link built from Deepnote MCP data, add MCP attrib
 | Claude Desktop or Cowork | `claude-desktop` | `claudemcp` |
 
 ```text
-https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={notebook_id}&utm_term={tool_name}
+https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={id}&utm_term={tool_name}
 ```
 
-Use these values exactly; braces mark placeholders and are not part of the final URL:
-
-- `utm_source={host_source}` from the table above
-- `utm_medium=mcp`
-- `utm_campaign={host_campaign}` from the table above
-- `utm_content={notebook_id}`
-- `utm_term={tool_name}`
-
-For notebook links, set `utm_content` to the notebook ID. For project-only links, set `utm_content` to the project ID; when a project link represents a specific notebook's parent project, use that notebook ID instead.
-
-Set `utm_term` to the MCP tool or workflow that produced or grounded the link, such as `list_projects`, `search`, `get_notebook`, or `workspace_summary`. Use lowercase snake_case values and URL-encode if needed.
-
-For links to newly created notebooks, set `utm_content` to the created notebook ID and set `utm_term` to the tool that produced the notebook: `create_notebook` when a `create_notebook` call returned it, `create_project` when the link points at the default notebook of a project created without a separate `create_notebook` call. Use `utm_term=get_notebook` when a follow-up `get_notebook` call provided the fields needed to construct the link.
-
-Add UTM parameters before any URL fragment. Use `?` when the URL has no existing query string, otherwise use `&`. Preserve non-UTM query parameters if they already exist, and replace any existing `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, or `utm_term` values instead of duplicating them.
+- `utm_content` is the notebook ID for notebook links and the project ID for project links.
+- `utm_term` is the tool that produced the link, such as `list_projects`, `search`, `get_notebook`, or `create_notebook`, or `workspace_summary` for links built by the workspace summary.
 
 ## Response Style
 
