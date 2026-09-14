@@ -5,17 +5,13 @@ description: Use when a task asks for Deepnote URLs, links, project links, noteb
 
 # Deepnote Links
 
-Use this skill to build user-facing Deepnote web links from MCP data. Prefer links returned by `generate_project_url`, then links grounded in `get_me`, `list_projects`, `search`, and `get_notebook` responses, instead of guessing from names alone. Every project and notebook link built from Deepnote MCP data must include the UTM parameters below.
+Use this skill to build user-facing Deepnote web links from MCP data. Prefer `generate_project_url`, then links grounded in `get_me`, `list_projects`, `search`, and `get_notebook` responses. Every project and notebook link must include the UTM parameters below.
 
 ## Server-Generated Links
 
-`generate_project_url` returns the canonical absolute URL for a project or notebook and is the preferred source for a single link:
+Use `generate_project_url` as the preferred source for a single project or notebook URL, then append the UTM parameters below. Fall back to the manual URL shapes when the tool is unavailable, when building many links from one `list_projects` or `search` response, or when a workspace link is needed.
 
-- Pass `projectId` for a project link, `notebookId` for a notebook link, or both. When only `notebookId` is given, the project is derived from it.
-- The returned `url` already uses the workspace slug and the current routing rules, so use it as returned and only append the UTM parameters below.
-- It returns `Project not found` or `Notebook not found` when the caller cannot access the resource, including when the notebook belongs to a different project than the `projectId` given. Do not retry with guessed IDs.
-
-Fall back to the manual URL shapes below when the tool is not advertised, when building many links at once from a `list_projects` or `search` response where a call per row would be wasteful, or when a workspace link is needed, since the tool only covers projects and notebooks.
+Do not retry `Project not found` or `Notebook not found` errors with guessed IDs. When both IDs are supplied, the notebook must belong to the project.
 
 ## Inputs To Resolve
 
@@ -24,14 +20,9 @@ Fall back to the manual URL shapes below when the tool is not advertised, when b
 3. Resolve notebook links with `get_notebook` when possible. Use the notebook `id`, `name`, and parent project data.
 4. If the exact project or notebook is ambiguous, ask a short clarification or provide a compact candidate list with links only for unambiguous matches.
 
-## Creation Link Rules
+## Links After Creation
 
-When linking after a creation workflow, use the resource IDs returned by the write tools as the source of truth:
-
-- If `create_notebook` returned a notebook, build the notebook link for that returned notebook ID. Do not substitute the first notebook on the project or the default notebook created by `create_project`.
-- If `create_project` created a project and no separate `create_notebook` call was made, use the default notebook created with the project only when a notebook link is needed for that active notebook.
-- If both the project default notebook and a later `create_notebook` result are present, the later `create_notebook` result is the notebook to link unless the user explicitly asks for the default notebook.
-- If parent project data is missing for the created notebook, call `get_notebook` for the target notebook ID or use the known project ID from the creation workflow before constructing the link.
+Link the active notebook as defined by the Active Notebook Rule in `deepnote-notebooks`: the notebook returned by `create_notebook` when one was called, otherwise the default notebook of the project returned by `create_project`. If parent project data is missing for that notebook, call `get_notebook` for its ID or use the project ID from the creation workflow before building the link.
 
 ## URL Shapes
 
@@ -78,12 +69,12 @@ folder/notebook 10% + a1b2c3d4
 - File paths, when exposed and requested, append after the project segment as `/{encodeURIComponent(filePath)}`.
 - Cell or block anchors append as `#anchor`.
 - Only generate published app links such as `/app/{authorSlug}/{projectSegment}` when MCP data explicitly exposes the published author slug.
-- For Streamlit apps, use the `url` returned by `create_streamlit_app` or `list_streamlit_apps` as-is. Do not assemble `/streamlit-apps/{id}` paths by hand.
-- Static site links come from the `url` returned by `publish_static_site` or from `staticFiles.url` in `get_project`.
+- Use Streamlit URLs returned by `create_streamlit_app` or `list_streamlit_apps`; do not assemble them from an app ID.
+- Use static-site URLs returned by `publish_static_site` or `get_project`; never construct a static-site hostname.
 
 ## UTM Parameters
 
-For every project and notebook link built from Deepnote MCP data, add MCP attribution query parameters. `utm_source` and `utm_campaign` identify the host running this skill:
+Every project and notebook link gets these parameters. `utm_source` and `utm_campaign` depend on the host:
 
 | Host | `utm_source` | `utm_campaign` |
 | --- | --- | --- |
@@ -92,32 +83,19 @@ For every project and notebook link built from Deepnote MCP data, add MCP attrib
 | Claude Desktop or Cowork | `claude-desktop` | `claudemcp` |
 
 ```text
-https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={notebook_id}&utm_term={tool_name}
+https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign={host_campaign}&utm_content={id}&utm_term={tool_name}
 ```
 
-Use these values exactly; braces mark placeholders and are not part of the final URL:
-
-- `utm_source={host_source}` from the table above
-- `utm_medium=mcp`
-- `utm_campaign={host_campaign}` from the table above
-- `utm_content={notebook_id}`
-- `utm_term={tool_name}`
-
-For notebook links, set `utm_content` to the notebook ID. For project-only links, set `utm_content` to the project ID; when a project link represents a specific notebook's parent project, use that notebook ID instead.
-
-Set `utm_term` to the MCP tool or workflow that produced or grounded the link, such as `generate_project_url`, `list_projects`, `search`, `get_notebook`, or `workspace_summary`. Use lowercase snake_case values and URL-encode if needed.
-
-For links to newly created notebooks, set `utm_content` to the created notebook ID and set `utm_term` to the tool that produced the notebook: `create_notebook` when a `create_notebook` call returned it, `create_project` when the link points at the default notebook of a project created without a separate `create_notebook` call. Use `utm_term=get_notebook` when a follow-up `get_notebook` call provided the fields needed to construct the link.
-
-Add UTM parameters before any URL fragment. Use `?` when the URL has no existing query string, otherwise use `&`. Preserve non-UTM query parameters if they already exist, and replace any existing `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, or `utm_term` values instead of duplicating them.
+- `utm_content` is the notebook ID for notebook links and the project ID for project links.
+- `utm_term` is the tool that produced the link, such as `generate_project_url`, `list_projects`, `search`, `get_notebook`, or `create_notebook`, or `workspace_summary` for links built by the workspace summary.
 
 ## Response Style
 
 Return Markdown links with human-readable labels. Shown here with Codex values; in Claude Code use `utm_source=claude-code&utm_campaign=claudemcp` instead:
 
 ```markdown
-[Project Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=project-id&utm_term=list_projects)
-[Notebook Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id/notebook/notebook-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=notebook-id&utm_term=get_notebook)
+[Project Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=project-id&utm_term=generate_project_url)
+[Notebook Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id/notebook/notebook-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=notebook-id&utm_term=generate_project_url)
 ```
 
 For lists, inventories, and workspace summaries, put links in the `Project` or `Notebook` column and keep IDs in a separate column only when they help disambiguate. When a table has a `Notebook` column, hyperlink the notebook name itself. If a link cannot be built safely because workspace, project, or notebook data is missing, say which field is missing and how to resolve it.

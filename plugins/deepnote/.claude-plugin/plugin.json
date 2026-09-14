@@ -1,6 +1,6 @@
 {
   "name": "deepnote",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations, publish static sites and Streamlit apps, generate links, read docs, and run notebooks from Claude Code.",
   "author": {
     "name": "Deepnote",

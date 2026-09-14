@@ -1,29 +1,28 @@
 ---
 name: deepnote-notebooks
-description: Use when reading, reviewing, inspecting, or reasoning about hosted Deepnote notebooks, blocks, inputs, SQL, Python, or notebook outputs through the Deepnote MCP server.
+description: "Use when reading or reviewing Deepnote notebooks, creating projects or notebooks, renaming or duplicating notebooks, and creating, editing, deleting, or reordering blocks through the Deepnote MCP server."
 ---
 
 # Deepnote Notebooks
 
-## Notebook Inspection Workflow
+Tool arguments are defined in `deepnote-mcp`. Running a notebook is `deepnote-runs`. Links follow `deepnote-links`.
+
+## Inspection Workflow
 
 1. Resolve the target notebook with `search` or project context before using `get_notebook`.
 2. Read the notebook with `get_notebook` before answering questions about structure, inputs, blocks, or last-run state.
-3. Preserve distinctions between block types, notebook inputs, code, SQL, markdown, and metadata in your reasoning.
+3. Preserve the distinctions between block types, notebook inputs, code, SQL, markdown, and metadata in your reasoning.
 4. When reporting inputs, include the input `name`, `type`, current `value`, and `label` when useful.
-5. When SQL connection usage matters, use `list_integrations` and the integration usage tools to confirm project, notebook, or block references instead of inferring solely from names. When table, schema, or column context matters, use `get_integration` for cached structure.
-6. When asked to review or explain a notebook, ground the answer in specific notebook/block names or IDs when useful.
-7. If the user asks to create a project, create a notebook, add blocks/cells, update existing blocks/cells, or scaffold notebook content, use the `deepnote-notebook-editing` skill.
-8. If the user asks for recent runs, failed runs, or run history, use `list_notebook_runs` before selecting a run for `get_run`.
+5. When SQL connection usage matters, confirm it with `list_integrations` and the integration usage tools in `deepnote-workspace` instead of inferring from names; use `get_integration` for cached table and column context.
+6. Ground reviews and explanations in specific notebook or block names and IDs when useful.
+7. For recent, failed, or historical runs, use `deepnote-runs`.
 
-## Notebook Inspection Output
+## Inspection Output
 
-Great notebook-inspection output should help the user decide what the notebook does, whether it is safe to run, and what to do next. Prefer this structure:
-
-Keep notebook inspection brief and high signal by default. Lead with the answer, then include only the tables or cautions that materially help the user. Omit exhaustive block listings, raw code, and long outputs unless the user asks for more detail.
+Help the user decide what the notebook does, whether it is safe to run, and what to do next. Lead with the answer, then include only the tables or cautions that materially help. Omit exhaustive block listings, raw code, and long outputs unless asked.
 
 1. Start with a one-sentence brief: `Notebook "Name" in project "Project" has 12 blocks, 2 inputs, 1 visible connection, and last ran successfully on YYYY-MM-DD HH:MM UTC.`
-1. Show a compact status table:
+2. Show a compact status table:
 
 | Field | Value |
 | --- | --- |
@@ -34,34 +33,90 @@ Keep notebook inspection brief and high signal by default. Lead with the answer,
 | Last Run | `status/date/run id` or `No run visible` |
 | Visible Connections | `Integration name (type)` or `None visible via MCP` |
 
-1. If inputs exist, add an inputs table:
+3. If inputs exist, add an inputs table:
 
 | Input | Type | Current Value | Label |
 | --- | --- | --- | --- |
 | `input_name` | `text` | `safe summary or value` | `Human label` |
 
-1. Add a block map when useful, especially for reviews and debugging:
+4. Add a block map when useful, especially for reviews and debugging:
 
 | Order | Type | Purpose | Connection / Output |
 | --- | --- | --- | --- |
 | `1` | `sql` | `SELECT demo.gapminder sample` | `Clickhouse (clickhouse)` |
 
-1. Add `Cautions` only when actionable: cells that print environment variables, hard-coded credentials, mutating external calls, long-running servers, large dataset dumps, missing inputs, failed/pending last runs, SQL blocks whose integration is not visible, or integration usage that was not checked when it matters.
-1. End with `Useful Next Actions` only when it helps, such as run notebook, inspect latest run, list recent runs, map integrations, summarize outputs, or review risky cells.
+5. Add `Cautions` only when actionable: cells that print secrets, environment variables, or configuration objects, hard-coded credentials, mutating external calls, long-running servers, large dataset dumps, missing inputs, failed or pending last runs, SQL blocks whose integration is not visible, or integration usage that was not checked when it matters.
+6. End with `Useful Next Actions` only when it helps: run the notebook, inspect the latest run, list recent runs, map integrations, summarize outputs, or review risky cells.
 
-When MCP does not expose a detail, say `Not visible via MCP` rather than inferring from names. Keep raw code excerpts short; summarize large cells and mention block IDs when useful.
+Keep raw code excerpts short; summarize large cells and mention block IDs when useful. If execution was not run, say so plainly and mention the remaining risk. For larger reviews, summarize relevant sections rather than listing every block.
 
-## Code And Output Handling
+## Code Guidance
 
 - Before suggesting code changes, inspect nearby blocks for imports, shared variables, SQL connections, inputs, and upstream assumptions.
 - Prefer deterministic notebook code. Avoid hidden global state, implicit external files, or hard-coded credentials.
-- Do not claim an edit was applied unless a write-capable tool is available and reports success. For project, notebook, block creation, and existing block updates, use `deepnote-notebook-editing`.
-- If you run a notebook, pass requested input values through `create_run.inputs` using the input `name` fields returned by `get_notebook`, then capture run status with `get_run`. Omit `snapshotDelivery` for status checks so the default download URL delivery is used; request `snapshotDelivery: "inline"` when you need to summarize snapshot content or errors.
-- Run input values do not change the notebook's saved default input values.
-- For SQL blocks, preserve the existing connection or data source in recommendations unless the user asks to move it. Use `get_integration` for cached table/column context when needed.
-- Before running a notebook, flag cells that print `os.environ`, environment variables, credentials, tokens, or broad secret dumps. Do not run those notebooks unless the user explicitly confirms after the risk is named.
-- Treat cells that start servers, send network requests, write files, cancel/modify external records, or call production-like systems as stateful. Call out the side effect before execution.
+- For SQL blocks, preserve the existing connection or data source in recommendations unless the user asks to move it.
+- Do not claim an edit was applied unless a write tool is available and reported success.
 
-## Review And Cleanup
+## Editing Workflow
 
-Use Deepnote MCP reads to verify notebook structure before making claims. If execution was not run, say so plainly and mention the remaining risk. For larger reviews, summarize relevant sections rather than listing every block.
+Use this workflow to create a project or notebook, rename or duplicate a notebook, add or revise a block, delete or reorder blocks, or scaffold starter content. Each edit needs its matching tool: `create_project`, `create_notebook`, `update_notebook`, `duplicate_notebook`, `create_block`, `update_block`, `delete_block`, or `reorder_notebook_blocks`. If that tool is not in the current session, say which capability is missing.
+
+1. Resolve ambiguous names and IDs before writing: `get_me` for workspace identity, `search` or `list_projects` for projects and notebooks, `list_folders` for project placement, `get_notebook` for current notebook state, and `list_integrations` for SQL connections.
+2. Treat `create_project`, `create_notebook`, `duplicate_notebook`, and `create_block` as non-idempotent. Repeating a call creates another resource.
+3. Use `create_project` only when the user wants a new project. Use `create_notebook` only when adding an empty notebook to a project; capture the returned notebook ID and add blocks afterward with `create_block` in that exact notebook.
+4. Use `create_block` for each new block. Omit `position` to append, or pass a zero-based `position` when placement matters. Pass `includeNotebookBlockIds: true` when the final order matters, especially for ordered inserts and multi-block scaffolds.
+5. Use `update_notebook` only to rename a notebook. Use `duplicate_notebook` to copy one within its current project; rename the returned copy afterward when the user requested a specific name.
+6. Use `update_block` to change an existing block in place; it never creates a new block. Use `delete_block` only for a block the user clearly asked to remove. Use `reorder_notebook_blocks` to move existing blocks; it preserves the relative order of blocks omitted from `blockIds` and returns the final active order.
+7. Verify meaningful edits with `get_notebook` when order, integration attachment, or multi-block content matters.
+8. Do not run the notebook after editing unless the user explicitly asks or confirms a final run prompt.
+
+## Active Notebook Rule
+
+Creation workflows keep exactly one active target notebook, and every later block, verification, link, and run prompt uses it:
+
+- If only `create_project` was called, the active notebook is the default notebook created with the project.
+- If `create_notebook` was called, the active notebook is the notebook it returned, even when the project also has a default notebook.
+- Never link to or run the project's default notebook unless it is the active notebook. When both a project link and a notebook link are useful, label them separately so the notebook link points at the active notebook.
+
+## Notebook Rename And Duplication
+
+`update_notebook` changes only the name. Naming a standard project's notebook `Init` designates it as the project init notebook; agent and single-notebook projects reject renames. `duplicate_notebook` creates a copy in the same project with an automatically generated unique name and accepts no target project or name. Use the returned notebook ID for any requested follow-up rename or edit.
+
+## Block Creation
+
+Block types, as enumerated by the `create_block` schema:
+
+- Code and data: `code`, `sql`, `markdown`, `notebook-function`
+- Inputs: `input-text`, `input-textarea`, `input-select`, `input-date`, `input-date-range`, `input-slider`, `input-file`, `input-checkbox`
+- Text cells: `text-cell-h1`, `text-cell-h2`, `text-cell-h3`, `text-cell-p`, `text-cell-bullet`, `text-cell-todo`, `text-cell-callout`
+- Other: `visualization`, `pivot-table`, `image`, `button`, `separator`, `big-number`, `agent`
+
+A text cell holds one line. A bullet list is one `text-cell-bullet` block per item, and a task list is one `text-cell-todo` per item with `metadata.checked`. Bullets have no nesting or numbering; there is no numbered-list type, so use a `markdown` block for ordered lists, tables, links, and anything richer than a single formatted line. `text-cell-callout` takes `metadata.color` of `blue`, `green`, `yellow`, `red`, or `purple`.
+
+For SQL blocks, resolve the integration with `list_integrations` when the user names a connection, pass it as top-level `integrationId`, and never put `sql_integration_id` inside `metadata`. Do not pass `integrationId` for non-SQL blocks; it must reference a SQL-capable integration in the same workspace.
+
+For input blocks, put block-type configuration in `metadata` and keep `content` for the visible or default textual content. Preserve existing naming and variable conventions when adding inputs near related blocks.
+
+## Block Update
+
+Before updating, call `get_notebook` and identify the target block ID, its current type, and its content. When the current SQL integration matters, confirm it with `list_integrations` and the integration usage tools; do not infer it from block content. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
+
+Send the full replacement `content`; partial snippets are not merged. For SQL blocks, `update_block` can change `content`, `integrationId`, or both in one call, following the same `integrationId` rules as block creation. `update_block` cannot change a block's type, update arbitrary metadata, or edit saved input defaults; say so instead of claiming those changes were applied. Use `delete_block` to remove a block.
+
+## Block Deletion
+
+Before deleting, call `get_notebook` and confirm the target block ID. `delete_block` is permanent through MCP and returns not found when the block is already gone. Do not delete additional empty or unused blocks unless the user asked for them too.
+
+## Block Reordering
+
+Before moving blocks, call `get_notebook` and identify the current ordered block IDs. Ask a clarifying question only when the target or destination is ambiguous.
+
+Pass `blockIds` ordered exactly as the moved group should appear. For `placement.type: "after"`, the anchor block must be an active block in the same notebook and must not be included in `blockIds`; use `start` or `end` instead of manufacturing an anchor when the user asks for the beginning or end of the notebook. If the tool returns the same final order, treat it as a no-op rather than an error.
+
+## Reporting Edits
+
+After a successful edit, report the created project, the active notebook, and block names or IDs when relevant, plus placement or final block order when useful. Include links built with `deepnote-links` for the active notebook.
+
+If a notebook was created or scaffolded and not run, end with a short question asking whether to run the active notebook now. Do not call `create_run` until the user confirms; then follow `deepnote-runs` with the active notebook ID.
+
+If a write tool returns an error, surface the user-facing message concisely and name the likely fix: missing permission, missing target resource, invalid block type, invalid position or placement, duplicate notebook name, suspended project, or incompatible SQL integration.
