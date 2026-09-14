@@ -94,7 +94,7 @@ For input blocks, put block-type configuration in `metadata` and keep `content` 
 
 ## Block Update
 
-Before updating, call `get_notebook` and identify the target block ID, its current type and content, and its visible SQL integration when relevant. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
+Before updating, call `get_notebook` and identify the target block ID, its current type, and its content. When the current SQL integration matters, confirm it with `list_integrations` and the integration usage tools; do not infer it from block content. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
 
 Send the full replacement `content`; partial snippets are not merged. For SQL blocks, `update_block` can change `content`, `integrationId`, or both in one call, following the same `integrationId` rules as block creation. `update_block` cannot change a block's type, update arbitrary metadata, or edit saved input defaults; say so instead of claiming those changes were applied. Use `delete_block` to remove a block.
 

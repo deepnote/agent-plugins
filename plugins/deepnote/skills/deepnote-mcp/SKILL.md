@@ -26,7 +26,7 @@ This is the only place that documents tool arguments. The other Deepnote skills 
 - `list_integration_notebook_usages`: list notebooks that contain SQL blocks using an integration, optionally narrowed to one `projectId`.
 - `list_integration_block_usages`: list SQL blocks using an integration, optionally narrowed to one `projectId`.
 - `get_notebook`: get notebook details, blocks, input variables, and last-run metadata by notebook ID.
-- `create_project`: create a new project. Requires `name`; accepts optional `folderId`. The created project includes a default empty notebook.
+- `create_project`: create a new project. Requires `name`; accepts optional `folderId` and `projectType` (`standard`, `notebook`, or `agent`; defaults to `standard`). The created project includes a default notebook.
 - `create_notebook`: create an empty notebook inside a project. Requires `projectId`; accepts optional `name`. Does not accept starter blocks.
 - `create_block`: create a block in a notebook. Requires `notebookId` and `type`; accepts optional `content`, `metadata`, zero-based `position` (omitted means append), `includeNotebookBlockIds`, and SQL-only `integrationId`.
 - `update_block`: replace an existing block's content and/or SQL integration. Requires `blockId`; accepts `content`, SQL-only `integrationId`, or both, and at least one of them.

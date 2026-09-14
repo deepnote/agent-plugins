@@ -14,7 +14,7 @@ When the user asks for a workspace summary, heartbeat, overview, or which notebo
 1. Use `get_me` for workspace name, workspace ID, API key type, and caller access level when useful.
 2. Use `list_projects` to collect projects and notebooks. For complete inventories, page through all results.
 3. Use `list_integrations` to collect integration names, types, and IDs.
-4. Use `get_notebook` for notebooks that need connection details or recent run detail.
+4. Use `get_notebook` for notebooks that need block, input, or recent-run detail.
 5. Identify scheduled notebooks from `isScheduled`.
 6. Identify active notebooks from `lastRunAt` or an explicitly requested run status from `get_run`. MCP does not expose live kernel or session state, so say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
 7. Map integration usage with the usage tools when direct usage matters. If usage was not checked, write `Usage not checked`; if a checked usage tool returns nothing, write `None found`.
@@ -42,12 +42,12 @@ Row rules:
 - For a specific project or notebook, filter the table to it.
 - For large workspaces, keep individual rows for scheduled notebooks, recently run notebooks, and notebooks with visible integrations, then collapse each project's remaining notebooks into one `N more notebooks` row. A collapsed row is `No` for Scheduled, shows the most recent visible `lastRunAt` among its notebooks or `None seen`, and lists their integrations, `None found` when usage was checked, or `Usage not checked`.
 - `Last Run Seen` is the notebook's visible `lastRunAt`, or a checked `get_run` completion time when more current. Format dates in UTC as `YYYY-MM-DD HH:MM UTC`. Never write `None seen` when a run ID or run timestamp is visible.
-- `Integrations` uses names and IDs from `list_integrations`, mapped with the usage tools when direct usage matters. Visible references from `get_notebook` blocks or inline run snapshots may also be mentioned. Do not infer usage from integration names alone; write `None found` only when checked usage or visible references return no connection.
+- `Integrations` uses names and IDs from `list_integrations`, mapped with the usage tools when direct usage matters. Visible integration references from inline run snapshots may also be mentioned. Do not infer usage from integration names alone; write `None found` only when checked usage or visible references return no connection.
 
 ## Integration Mapping Workflow
 
 1. Use `list_integrations` to resolve an integration name or type to an ID.
-2. Use `get_integration` for cached structure. The response includes integration details plus `tablesJsonPreview`, the serialized matching cached table structure, and `tablesTruncated`. When `tablesTruncated` is true, the preview contains only the first 50,000 characters and `tableNames` lists all matching table names. The `databaseName`, `schemaName`, and `tableName` filters apply to cached rows; a preview of `[]` means no matching cached structure is visible through MCP, not that the live database lacks the table.
+2. Use `get_integration` for cached structure. The response includes integration details plus `tablesJsonPreview`, the serialized matching cached table structure, and `tablesTruncated`. Parse `tablesJsonPreview` as JSON only when `tablesTruncated` is false. When it is true, use `tableNames` to choose narrower `databaseName`, `schemaName`, or `tableName` filters and call `get_integration` again. A preview of `[]` means no matching cached structure is visible through MCP, not that the live database lacks the table.
 3. Use `list_integration_project_usages` for connected projects, `list_integration_notebook_usages` for notebooks with SQL blocks that use the integration, and `list_integration_block_usages` for the exact SQL blocks and their content. Narrow any of them with `projectId`.
 4. Say that structure is cached. Do not present it as a live database scan, and do not claim access to row previews, query results, file metadata, or environment configuration unless an exposed MCP tool or a run snapshot provided them.
 
