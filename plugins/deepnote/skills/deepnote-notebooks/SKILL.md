@@ -80,7 +80,7 @@ Creation workflows keep exactly one active target notebook, and every later bloc
 
 ## Notebook Rename And Duplication
 
-`update_notebook` changes only the name. Naming a standard project's notebook `Init` designates it as the project init notebook; agent and single-notebook projects reject renames. `duplicate_notebook` creates a copy in the same project with an automatically generated unique name and accepts no target project or name. Use the returned notebook ID for any requested follow-up rename or edit.
+`update_notebook` changes only the name. Naming a standard project's notebook `Init` designates it as the project init notebook; agent and single-notebook projects reject renames and duplications. `duplicate_notebook` creates a copy in the same project with an automatically generated unique name and accepts no target project or name. Use the returned notebook ID for any requested follow-up rename or edit.
 
 ## Block Creation
 
@@ -105,7 +105,7 @@ Send the full replacement `content`; partial snippets are not merged. For SQL bl
 
 ## Block Deletion
 
-Before deleting, call `get_notebook` and confirm the target block ID. `delete_block` is permanent through MCP and returns not found when the block is already gone. Do not delete additional empty or unused blocks unless the user asked for them too.
+Before deleting, call `get_notebook` and confirm the target block ID. `delete_block` is permanent through MCP and returns not found when the block is already gone. In agent projects, it cannot delete the required agent block or system-created agent blocks. Do not delete additional empty or unused blocks unless the user asked for them too.
 
 ## Block Reordering
 
