@@ -67,7 +67,7 @@ folder/notebook 10% + a1b2c3d4
 ## Optional Suffixes
 
 - File paths, when exposed and requested, append after the project segment as `/{encodeURIComponent(filePath)}`.
-- Cell or block anchors append as `#anchor`.
+- Cell or block anchors append after the UTM query string as `#anchor`.
 - Only generate published app links such as `/app/{authorSlug}/{projectSegment}` when MCP data explicitly exposes the published author slug.
 - Use Streamlit URLs returned by `create_streamlit_app` or `list_streamlit_apps`; do not assemble them from an app ID.
 - Use static-site URLs returned by `publish_static_site` or `get_project`; never construct a static-site hostname.
