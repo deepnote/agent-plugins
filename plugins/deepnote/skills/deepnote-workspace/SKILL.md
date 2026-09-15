@@ -1,6 +1,6 @@
 ---
 name: deepnote-workspace
-description: "Use for workspace-level questions about Deepnote: workspace summary, heartbeat, overview, inventory of projects and notebooks, scheduled or recently run notebooks, integrations, cached table and column structure, and which projects, notebooks, or SQL blocks use an integration."
+description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and copying existing files between projects."
 ---
 
 # Deepnote Workspace
@@ -44,12 +44,29 @@ Row rules:
 - `Last Run Seen` is the notebook's visible `lastRunAt`, or a checked `get_run` completion time when more current. Format dates in UTC as `YYYY-MM-DD HH:MM UTC`. Never write `None seen` when a run ID or run timestamp is visible.
 - `Integrations` uses names and IDs from `list_integrations`, mapped with the usage tools when direct usage matters. Visible integration references from inline run snapshots may also be mentioned. Do not infer usage from integration names alone; write `None found` only when checked usage or visible references return no connection.
 
+## Project And Folder Inspection
+
+Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, and static-site settings. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and the current sharing state.
+
+Use `list_folders` to resolve the `folderId` for project creation. Folder names are not unique, so resolve nested paths by walking `parentFolderId`; omit `nameContains` when the complete hierarchy is needed.
+
 ## Integration Mapping Workflow
 
 1. Use `list_integrations` to resolve an integration name or type to an ID.
 2. Use `get_integration` for cached structure. The response includes integration details plus `tablesJsonPreview`, the serialized matching cached table structure, and `tablesTruncated`. Parse `tablesJsonPreview` as JSON only when `tablesTruncated` is false. When it is true, use `tableNames` to choose narrower `databaseName`, `schemaName`, or `tableName` filters and call `get_integration` again. A preview of `[]` means no matching cached structure is visible through MCP, not that the live database lacks the table.
 3. Use `list_integration_project_usages` for connected projects, `list_integration_notebook_usages` for notebooks with SQL blocks that use the integration, and `list_integration_block_usages` for the exact SQL blocks and their content. Narrow any of them with `projectId`.
 4. Say that structure is cached. Do not present it as a live database scan, and do not claim access to row previews, query results, file metadata, or environment configuration unless an exposed MCP tool or a run snapshot provided them.
+
+## Integration Management
+
+1. Resolve the integration with `list_integrations` and inspect the project's current attachments with `get_project`.
+2. Use `attach_integration` or `detach_integration` only when the user asked to change that project. These operations return a conflict when the integration is already in the requested state; report the existing state instead of retrying.
+3. Use `create_integration` only when the user wants a new workspace integration and its type is accepted by the current tool schema. It requires integration-management permission and creates the integration without attaching it to a project.
+4. The creation response repeats connection `metadata`, which may include credentials. Report only the new integration's name, type, and ID.
+
+## Cross-Project File Copy
+
+Use `get_project` on both projects to confirm the source file exists and the target path is free. `copy_file` preserves the normalized source path, accepts no destination path, requires different source and target projects, copies files rather than directories, and never overwrites. It requires read access to the source and edit access to the target.
 
 Standalone integration table, only when explicitly requested:
 

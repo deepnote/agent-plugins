@@ -2,7 +2,7 @@
 
 Use Deepnote from Codex, Claude Code, or other AI agents. This repo serves all Deepnote agent plugins.
 
-The plugin connects the agent to the hosted Deepnote MCP server at `https://deepnote.com/mcp` and ships skills that teach it how to work with Deepnote workspaces, projects, notebooks, integrations, docs, and notebook runs.
+The plugin connects the agent to the hosted Deepnote MCP server at `https://deepnote.com/mcp` and ships skills that teach it how to work with Deepnote workspaces, projects, notebooks, integrations, apps, docs, and notebook runs.
 
 ## Install
 
@@ -41,24 +41,29 @@ When the variable is set, Codex uses it and skips OAuth. Deepnote API docs: http
 Through the hosted MCP server the agent can:
 
 - Identify the connected workspace and the caller's access level
-- Search projects, notebooks, blocks, and integrations, and list projects and integrations
-- Inspect notebooks, their blocks, input variables, and last-run metadata
-- Create projects, notebooks, and blocks, and update or reorder blocks
+- Search projects, notebooks, blocks, and integrations, and list projects, folders, and integrations
+- Inspect projects, notebooks, file inventories, input variables, and last-run metadata
+- Create projects, notebooks, and blocks; rename or duplicate notebooks; and update, delete, or reorder blocks
+- Create, attach, and detach integrations, inspect cached table structure, and map integration usage
+- Copy an existing file between projects and generate canonical project or notebook URLs
 - Start notebook runs, optionally with input values, and read run history, status, errors, and snapshot output
-- Map integrations: cached table structure, and which projects, notebooks, and SQL blocks use an integration
 - Read Deepnote docs
-- Publish a small HTML/CSS/JavaScript site into a project and toggle its sharing, when the server advertises `publish_static_site`
+- Publish a small HTML/CSS/JavaScript site or serve an existing project file as a Streamlit app
 
 ## Good first prompts
 
 - `Which Deepnote workspace am I connected to?`
 - `Search my Deepnote workspace for customer retention notebooks.`
+- `Show me what is in this Deepnote project.`
 - `Inspect this Deepnote notebook and summarize it.`
+- `Duplicate this notebook and rename the copy to Experiment v2.`
 - `Move these Deepnote notebook blocks to the top of the notebook.`
 - `Run this Deepnote notebook with customer_name set to Acme.`
 - `Show me the recent runs for this Deepnote notebook.`
-- `List Deepnote integrations matching Snowflake.`
 - `Show me where this Deepnote integration is used.`
+- `Attach my Snowflake integration to this project.`
+- `Serve apps/dashboard.py from this project as a Streamlit app.`
+- `Copy utils/helpers.py from this project into my Sales Analysis project.`
 - `Look up the Deepnote docs for scheduled notebooks.`
 
 ## Repository layout
@@ -119,3 +124,6 @@ Things to know:
 - Sign-in says the workspace cannot use the MCP connector, or that MCP access is disabled: a workspace admin needs to enable MCP access for that workspace.
 - A project, notebook, or integration is missing: the signed-in user, or the API key's creator, needs access to it.
 - Creating or editing fails with `Insufficient permissions`: use an editor or admin key, or a user with edit access to the project.
+- Attaching or detaching an integration returns a conflict: inspect the project because the integration is already in the requested state.
+- `copy_file` reports `File already exists`: the target project already has the same path; the tool never overwrites.
+- A Streamlit app remains `starting`: it may be slow or may have failed during startup; check the app logs in Deepnote.

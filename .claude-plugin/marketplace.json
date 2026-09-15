@@ -11,7 +11,7 @@
     {
       "name": "deepnote",
       "source": "./plugins/deepnote",
-      "description": "Search Deepnote workspaces, inspect and edit notebooks, generate links, map integrations, read docs, and run notebooks from Claude Code.",
+      "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations, publish static sites and Streamlit apps, generate links, read docs, and run notebooks from Claude Code.",
       "category": "Data & Analytics",
       "keywords": [
         "deepnote",

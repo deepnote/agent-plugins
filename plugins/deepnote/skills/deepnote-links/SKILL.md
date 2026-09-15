@@ -5,7 +5,13 @@ description: Use when a task asks for Deepnote URLs, links, project links, noteb
 
 # Deepnote Links
 
-Use this skill to build user-facing Deepnote web links from MCP data. Prefer links grounded in `get_me`, `list_projects`, `search`, and `get_notebook` responses instead of guessing from names alone. Every project and notebook link built from Deepnote MCP data must include the UTM parameters below.
+Use this skill to build user-facing Deepnote web links from MCP data. Prefer `generate_project_url`, then links grounded in `get_me`, `list_projects`, `search`, and `get_notebook` responses. Every project and notebook link must include the UTM parameters below.
+
+## Server-Generated Links
+
+Use `generate_project_url` as the preferred source for a single project or notebook URL, then append the UTM parameters below. Fall back to the manual URL shapes when the tool is unavailable, when building many links from one `list_projects` or `search` response, or when a workspace link is needed.
+
+Do not retry `Project not found` or `Notebook not found` errors with guessed IDs. When both IDs are supplied, the notebook must belong to the project.
 
 ## Inputs To Resolve
 
@@ -61,8 +67,10 @@ folder/notebook 10% + a1b2c3d4
 ## Optional Suffixes
 
 - File paths, when exposed and requested, append after the project segment as `/{encodeURIComponent(filePath)}`.
-- Cell or block anchors append as `#anchor`.
-- Only generate published app links such as `/app/{authorSlug}/{projectSegment}` or `/streamlit-apps/{streamlitAppId}` when MCP data explicitly exposes the published author slug or Streamlit app ID.
+- Cell or block anchors append after the UTM query string as `#anchor`.
+- Only generate published app links such as `/app/{authorSlug}/{projectSegment}` when MCP data explicitly exposes the published author slug.
+- Use Streamlit URLs returned by `create_streamlit_app` or `list_streamlit_apps`; do not assemble them from an app ID.
+- Use static-site URLs returned by `publish_static_site` or `get_project`; never construct a static-site hostname.
 
 ## UTM Parameters
 
@@ -79,15 +87,15 @@ https://deepnote.com/<path>?utm_source={host_source}&utm_medium=mcp&utm_campaign
 ```
 
 - `utm_content` is the notebook ID for notebook links and the project ID for project links.
-- `utm_term` is the tool that produced the link, such as `list_projects`, `search`, `get_notebook`, or `create_notebook`, or `workspace_summary` for links built by the workspace summary.
+- `utm_term` is the tool that produced the link, such as `generate_project_url`, `list_projects`, `search`, `get_notebook`, or `create_notebook`, or `workspace_summary` for links built by the workspace summary.
 
 ## Response Style
 
 Return Markdown links with human-readable labels. Shown here with Codex values; in Claude Code use `utm_source=claude-code&utm_campaign=claudemcp` instead:
 
 ```markdown
-[Project Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=project-id&utm_term=list_projects)
-[Notebook Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id/notebook/notebook-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=notebook-id&utm_term=get_notebook)
+[Project Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=project-id&utm_term=generate_project_url)
+[Notebook Name](https://deepnote.com/workspace/workspace-slug-workspace-id/project/project-id/notebook/notebook-id?utm_source=codex&utm_medium=mcp&utm_campaign=openaimcp&utm_content=notebook-id&utm_term=generate_project_url)
 ```
 
 For lists, inventories, and workspace summaries, put links in the `Project` or `Notebook` column and keep IDs in a separate column only when they help disambiguate. When a table has a `Notebook` column, hyperlink the notebook name itself. If a link cannot be built safely because workspace, project, or notebook data is missing, say which field is missing and how to resolve it.

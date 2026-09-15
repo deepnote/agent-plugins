@@ -1,6 +1,6 @@
 ---
 name: deepnote-notebooks
-description: "Use when reading, reviewing, creating, editing, or reordering Deepnote notebooks and blocks through the Deepnote MCP server: notebook structure, inputs, SQL, Python, and outputs, creating projects or notebooks, and adding, updating, scaffolding, or moving blocks."
+description: "Use when reading or reviewing Deepnote notebooks, creating projects or notebooks, renaming or duplicating notebooks, and creating, editing, deleting, or reordering blocks through the Deepnote MCP server."
 ---
 
 # Deepnote Notebooks
@@ -59,15 +59,16 @@ Keep raw code excerpts short; summarize large cells and mention block IDs when u
 
 ## Editing Workflow
 
-Use this workflow to create a project or notebook, add or revise a block or cell, move or reorder blocks, scaffold starter content, or insert code, SQL, markdown, or input blocks. Each edit needs its tool: `create_project`, `create_notebook`, `create_block`, `update_block`, `reorder_notebook_blocks`, or `delete_block`. If the tool for the requested edit is not in the current session, say which one is missing instead of claiming support.
+Use this workflow to create a project or notebook, rename or duplicate a notebook, add or revise a block, delete or reorder blocks, or scaffold starter content. Each edit needs its matching tool: `create_project`, `create_notebook`, `update_notebook`, `duplicate_notebook`, `create_block`, `update_block`, `delete_block`, or `reorder_notebook_blocks`. If that tool is not in the current session, say which capability is missing.
 
-1. Resolve ambiguous names and IDs before writing: `get_me` for workspace identity, `search` or `list_projects` for projects and notebooks, `get_notebook` for the current block order, and `list_integrations` for SQL connections.
-2. Treat `create_project`, `create_notebook`, and `create_block` as non-idempotent. Repeating a call creates another resource.
+1. Resolve ambiguous names and IDs before writing: `get_me` for workspace identity, `search` or `list_projects` for projects and notebooks, `list_folders` for project placement, `get_notebook` for current notebook state, and `list_integrations` for SQL connections.
+2. Treat `create_project`, `create_notebook`, `duplicate_notebook`, and `create_block` as non-idempotent. Repeating a call creates another resource.
 3. Use `create_project` only when the user wants a new project. Use `create_notebook` only when adding an empty notebook to a project; capture the returned notebook ID and add blocks afterward with `create_block` in that exact notebook.
 4. Use `create_block` for each new block. Omit `position` to append, or pass a zero-based `position` when placement matters. Pass `includeNotebookBlockIds: true` when the final order matters, especially for ordered inserts and multi-block scaffolds.
-5. Use `update_block` to change an existing block in place; it never creates a new block. Use `reorder_notebook_blocks` to move existing blocks; it preserves the relative order of blocks omitted from `blockIds` and returns the final active order.
-6. Verify meaningful edits with `get_notebook` when order, integration attachment, or multi-block content matters.
-7. Do not run the notebook after editing unless the user explicitly asks or confirms a final run prompt.
+5. Use `update_notebook` only to rename a notebook. Use `duplicate_notebook` to copy one within its current project; rename the returned copy afterward when the user requested a specific name.
+6. Use `update_block` to change an existing block in place; it never creates a new block. Use `delete_block` only for a block the user clearly asked to remove. Use `reorder_notebook_blocks` to move existing blocks; it preserves the relative order of blocks omitted from `blockIds` and returns the final active order.
+7. Verify meaningful edits with `get_notebook` when order, integration attachment, or multi-block content matters.
+8. Do not run the notebook after editing unless the user explicitly asks or confirms a final run prompt.
 
 ## Active Notebook Rule
 
@@ -76,6 +77,10 @@ Creation workflows keep exactly one active target notebook, and every later bloc
 - If only `create_project` was called, the active notebook is the default notebook created with the project.
 - If `create_notebook` was called, the active notebook is the notebook it returned, even when the project also has a default notebook.
 - Never link to or run the project's default notebook unless it is the active notebook. When both a project link and a notebook link are useful, label them separately so the notebook link points at the active notebook.
+
+## Notebook Rename And Duplication
+
+`update_notebook` changes only the name. Naming a standard project's notebook `Init` designates it as the project init notebook; agent and single-notebook projects reject renames and duplications. `duplicate_notebook` creates a copy in the same project with an automatically generated unique name and accepts no target project or name. Use the returned notebook ID for any requested follow-up rename or edit.
 
 ## Block Creation
 
@@ -97,6 +102,10 @@ For input blocks, put block-type configuration in `metadata` and keep `content` 
 Before updating, call `get_notebook` and identify the target block ID, its current type, and its content. When the current SQL integration matters, confirm it with `list_integrations` and the integration usage tools; do not infer it from block content. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
 
 Send the full replacement `content`; partial snippets are not merged. For SQL blocks, `update_block` can change `content`, `integrationId`, or both in one call, following the same `integrationId` rules as block creation. `update_block` cannot change a block's type, update arbitrary metadata, or edit saved input defaults; say so instead of claiming those changes were applied. Use `delete_block` to remove a block.
+
+## Block Deletion
+
+Before deleting, call `get_notebook` and confirm the target block ID. `delete_block` is permanent through MCP and returns not found when the block is already gone. In agent projects, it cannot delete the required agent block or system-created agent blocks. Do not delete additional empty or unused blocks unless the user asked for them too.
 
 ## Block Reordering
 
