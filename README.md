@@ -124,7 +124,8 @@ Things to know:
 - Claude Code lists no Deepnote server at all: check that the entry in `plugins/deepnote/.mcp.json` still has `"type": "http"`.
 - Sign-in says the workspace cannot use the MCP connector, or that MCP access is disabled: a workspace admin needs to enable MCP access for that workspace.
 - A project, notebook, or integration is missing: the signed-in user, or the API key's creator, needs access to it.
-- Creating or editing fails with `Insufficient permissions`: use an editor or admin key, or a user with edit access to the project. Changing a project's environment needs admin access to the project.
+- Creating or editing fails with `Insufficient permissions`: use an editor or admin key, or a user with edit access to the project.
+- `update_project` fails with `Insufficient permissions`: changing a project's static-site access, Streamlit app API access, or environment needs full access to the project, not just edit access.
 - Attaching or detaching an integration returns a conflict: inspect the project because the integration is already in the requested state.
 - `copy_file` reports `File already exists`: the target project already has the same path; the tool never overwrites.
 - A Streamlit app remains `starting`: it may be slow or may have failed during startup; check the app logs in Deepnote.
