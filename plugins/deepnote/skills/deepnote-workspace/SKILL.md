@@ -46,7 +46,7 @@ Row rules:
 
 ## Project And Folder Inspection
 
-Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, and static-site settings. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and the current sharing state.
+Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, static-site settings, and environment. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and the current sharing state.
 
 Use `list_folders` to resolve the `folderId` for project creation. Folder names are not unique, so resolve nested paths by walking `parentFolderId`; omit `nameContains` when the complete hierarchy is needed.
 
