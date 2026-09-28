@@ -16,7 +16,7 @@ When the user asks for a workspace summary, heartbeat, overview, or which notebo
 3. Use `list_integrations` to collect integration names, types, and IDs.
 4. Use `get_notebook` for notebooks that need block, input, or recent-run detail.
 5. Identify scheduled notebooks from `isScheduled`.
-6. Identify active notebooks from `lastRunAt` or an explicitly requested run status from `get_run`. MCP does not expose open editor sessions; `get_machine` shows only whether the project machine is running. Say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
+6. Identify active notebooks from `lastRunAt` or an explicitly requested run status from `get_run`. `get_machine` reports the project machine's state, not open editor sessions. Say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
 7. Map integration usage with the usage tools when direct usage matters. If usage was not checked, write `Usage not checked`; if a checked usage tool returns nothing, write `None found`.
 8. Build project and notebook links with `deepnote-links`, using `utm_term=workspace_summary` for links created by this workflow rather than by a single tool result.
 
