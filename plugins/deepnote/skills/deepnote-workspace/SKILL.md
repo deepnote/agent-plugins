@@ -16,7 +16,7 @@ When the user asks for a workspace summary, heartbeat, overview, or which notebo
 3. Use `list_integrations` to collect integration names, types, and IDs.
 4. Use `get_notebook` for notebooks that need block, input, or recent-run detail.
 5. Identify scheduled notebooks from `isScheduled`.
-6. Identify active notebooks from `lastRunAt` or an explicitly requested run status from `get_run`. MCP does not expose live kernel or session state, so say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
+6. Identify active notebooks from `lastRunAt` or an explicitly requested run status from `get_run`. MCP does not expose open editor sessions; `get_machine` shows only whether the project machine is running. Say that active means recent run activity rather than an open editor session. Prefer `recently run`, `scheduled`, `pending run`, or `last run` over "currently open" or "currently running".
 7. Map integration usage with the usage tools when direct usage matters. If usage was not checked, write `Usage not checked`; if a checked usage tool returns nothing, write `None found`.
 8. Build project and notebook links with `deepnote-links`, using `utm_term=workspace_summary` for links created by this workflow rather than by a single tool result.
 
@@ -46,7 +46,9 @@ Row rules:
 
 ## Project And Folder Inspection
 
-Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, and static-site settings. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and the current sharing state.
+Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, static-site settings, and environment. Use `get_machine` for whether its machine is running and how big it is. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and the current sharing state.
+
+To put a project on another image, resolve the environment with `list_environments` and pass its `id` as `environmentId` to `create_project` or `update_project`. Switching the environment of an existing project restarts its running machine, which clears kernel state.
 
 Use `list_folders` to resolve the `folderId` for project creation. Folder names are not unique, so resolve nested paths by walking `parentFolderId`; omit `nameContains` when the complete hierarchy is needed.
 
