@@ -17,6 +17,13 @@ Tool arguments, pagination, and the capability boundary are defined in `deepnote
 6. If `create_run` returns an error, report it and stop. Do not call `get_run` unless a run ID was returned. This includes user-facing errors such as workspace or parallel run limits.
 7. Poll `get_run` until the run reaches a terminal state or it is clear the run is still in progress, following Snapshot Delivery below.
 
+## Machines
+
+- Detached runs, the default, start a machine of their own. To size one for the workload, call `list_machine_types`, pick an `available` type with enough `vCpus`, `memoryGiB`, or `gpuCount`, and pass its `id` as `machineType` to `create_run`. The project's machine type stays the same.
+- Live runs (`detached: false`) use the project machine and start it when it is stopped. Use `get_machine` to check its status and size, `start_machine` to have it ready ahead of time, and `restart_machine` when it is in the `error` status. After a restart, a stop, or an idle shutdown the kernel is fresh, so rerun the blocks that set up the state first.
+- To make the project machine bigger or smaller for live work, use `update_machine` with `type`. On a running machine this needs `restart: true`, which clears kernel state, so ask first.
+- Read the machine size from `get_machine`, not from code such as `os.cpu_count()`, which reports the host's cores rather than the machine's.
+
 ## Run Inputs
 
 `create_run` accepts an optional `inputs` object. Keys must be notebook input names from `get_notebook`, not labels or block IDs. Values must match the input block type:

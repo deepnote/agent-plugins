@@ -1,7 +1,7 @@
 {
   "name": "deepnote",
   "version": "0.5.0",
-  "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations, publish static sites and Streamlit apps, generate links, read docs, and run notebooks from Codex.",
+  "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations and project machines, publish static sites and Streamlit apps, generate links, read docs, and run notebooks from Codex.",
   "author": {
     "name": "Deepnote",
     "url": "https://deepnote.com"
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Deepnote",
     "shortDescription": "Work with Deepnote workspaces, projects, notebooks, and docs from Codex.",
-    "longDescription": "Adds Deepnote skills and hosted MCP configuration for Codex. Use it to identify the current workspace, search resources, inspect projects and files, manage integrations, generate project and notebook links, edit notebook structure, publish static sites and Streamlit apps, read Deepnote docs, run notebooks with optional inputs, and summarize run history, status, and outputs.",
+    "longDescription": "Adds Deepnote skills and hosted MCP configuration for Codex. Use it to identify the current workspace, search resources, inspect projects and files, manage integrations, choose project environments, start, stop, and resize project machines, generate project and notebook links, edit notebook structure, publish static sites and Streamlit apps, read Deepnote docs, run notebooks with optional inputs, and summarize run history, status, and outputs.",
     "developerName": "Deepnote",
     "category": "Data & Analytics",
     "capabilities": [

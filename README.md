@@ -44,10 +44,10 @@ Through the hosted MCP server the agent can:
 - Search projects, notebooks, blocks, and integrations, and list projects, folders, and integrations
 - Inspect projects, notebooks, file inventories, input variables, and last-run metadata
 - Create projects, notebooks, and blocks; rename or duplicate notebooks; and update, delete, or reorder blocks
-- List the workspace's environments (Docker images) and choose the one a project runs on
 - Create, attach, and detach integrations, inspect cached table structure, and map integration usage
 - Copy an existing file between projects and generate canonical project or notebook URLs
-- Start notebook runs, optionally with input values, and read run history, status, errors, and snapshot output
+- Start notebook runs, optionally with input values or on a chosen machine type, and read run history, status, errors, and snapshot output
+- Choose a project's environment (Docker image), check whether its machine is running and how big it is, start, stop, or restart it, and change its machine type or idle shutdown
 - Read Deepnote docs
 - Publish a small HTML/CSS/JavaScript site or serve an existing project file as a Streamlit app
 
@@ -61,6 +61,8 @@ Through the hosted MCP server the agent can:
 - `Move these Deepnote notebook blocks to the top of the notebook.`
 - `Run this Deepnote notebook with customer_name set to Acme.`
 - `Show me the recent runs for this Deepnote notebook.`
+- `Is this project's machine running, and how many vCPUs and how much memory does it have?`
+- `Run this notebook on a machine with at least 32 GB of memory.`
 - `Show me where this Deepnote integration is used.`
 - `Attach my Snowflake integration to this project.`
 - `Serve apps/dashboard.py from this project as a Streamlit app.`
@@ -129,3 +131,5 @@ Things to know:
 - Attaching or detaching an integration returns a conflict: inspect the project because the integration is already in the requested state.
 - `copy_file` reports `File already exists`: the target project already has the same path; the tool never overwrites.
 - A Streamlit app remains `starting`: it may be slow or may have failed during startup; check the app logs in Deepnote.
+- `update_machine` returns a conflict: the machine is running; pass `restart: true` to restart it on the new type, which clears kernel state.
+- A machine type is not available: `list_machine_types` shows why in `unavailableReason`, usually the workspace's plan or its free machine quota.
