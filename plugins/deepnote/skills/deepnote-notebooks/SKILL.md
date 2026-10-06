@@ -95,6 +95,8 @@ A text cell holds one line. A bullet list is one `text-cell-bullet` block per it
 
 For SQL blocks, resolve the integration with `list_integrations` when the user names a connection, pass it as top-level `integrationId`, and never put `sql_integration_id` inside `metadata`. Do not pass `integrationId` for non-SQL blocks; it must reference a SQL-capable integration in the same workspace.
 
+A block that ends in a dataframe stores one page of rows in its output, 10 by default (see Dataframe Outputs in `deepnote-runs`). When a later reader needs more, such as a published page or a `get_run` read, create the block with `"metadata": { "deepnote_table_state": { "pageSize": 100 } }`, sized close to the rows it returns: every stored output and snapshot grows with it, and `0` turns the output into an error. A code block without its own `deepnote_table_state` inherits the table state last set during the run, and SQL blocks always set one, so give the block the reader uses its own `pageSize`. `update_block` cannot change metadata, so recreate the block to change the page size.
+
 For input blocks, put block-type configuration in `metadata` and keep `content` for the visible or default textual content. Preserve existing naming and variable conventions when adding inputs near related blocks.
 
 ## Block Update
