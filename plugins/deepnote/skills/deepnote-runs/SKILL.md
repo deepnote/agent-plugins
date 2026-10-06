@@ -47,6 +47,7 @@ This is the single definition of how to handle `get_run` snapshots.
 - Request `snapshotDelivery: "blocks"` to inspect outputs, summarize results, or diagnose a failure from execution outputs. It returns `snapshotBlocks` with block IDs, types, outputs, and metadata, but no source.
 - Request `snapshotDelivery: "inline"` only when the full snapshot or block source is needed, such as mapping references visible in the snapshot. Inline snapshots can be large and sensitive: summarize the relevant blocks, outputs, failures, or data shape instead of dumping raw content.
 - If the current tool schema does not expose `snapshotDelivery`, use the fields `get_run` returns as they are and do not invent `snapshotContent` or `snapshotDownloadUrl`.
+- `get_block` with `includeOutputs: true` returns a block's outputs as the live editor shows them, which live runs update and detached runs never do. Read a detached run's outputs from its snapshot, not from `get_block`.
 
 ## Sensitive Outputs
 

@@ -13,7 +13,7 @@ Tool arguments are defined in `deepnote-mcp`. Running a notebook is `deepnote-ru
 2. Read the notebook with `get_notebook` before answering questions about structure, inputs, blocks, or last-run state.
 3. Preserve the distinctions between block types, notebook inputs, code, SQL, markdown, and metadata in your reasoning.
 4. When reporting inputs, include the input `name`, `type`, current `value`, and `label` when useful.
-5. Call `get_block` when one block's `metadata` matters, such as input configuration, callout color, or todo state; `get_notebook` does not return it.
+5. Call `get_block` when one block's `metadata` (input configuration, callout color, todo state) or its current output in the editor matters; `get_notebook` returns neither. Pass `includeOutputs: true` for the output, and `fullOutputs: true` only when the user needs a long output whole.
 6. When SQL connection usage matters, confirm it with `get_block`, `list_integrations`, and the integration usage tools in `deepnote-workspace` instead of inferring from names; use `get_integration` for cached table and column context.
 7. Ground reviews and explanations in specific notebook or block names and IDs when useful.
 8. For recent, failed, or historical runs, use `deepnote-runs`.
