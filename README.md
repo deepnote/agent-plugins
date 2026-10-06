@@ -42,7 +42,7 @@ Through the hosted MCP server the agent can:
 
 - Identify the connected workspace and the caller's access level
 - Search projects, notebooks, blocks, and integrations, and list projects, folders, and integrations
-- Inspect projects, notebooks, file inventories, input variables, and last-run metadata
+- Inspect projects, notebooks, blocks, file inventories, input variables, and last-run metadata
 - Create projects, notebooks, and blocks; rename or duplicate notebooks; and update, delete, or reorder blocks
 - Create, attach, and detach integrations, inspect cached table structure, and map integration usage
 - Copy an existing file between projects and generate canonical project or notebook URLs

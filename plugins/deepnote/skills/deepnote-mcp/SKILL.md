@@ -33,7 +33,8 @@ This is the authoritative summary of tool arguments. Workflow skills add only th
 - `detach_integration`: detach an integration from a project. Requires `integrationId` and `projectId`; returns a conflict if not attached.
 - `create_project`: create a new project. Requires `name`; accepts optional `folderId`, `projectType` (`standard`, `notebook`, or `agent`; defaults to `standard`), and `environmentId` from `list_environments` (defaults to the default environment). The created project includes a default notebook.
 - `create_notebook`: create an empty notebook inside a project. Requires `projectId`; accepts optional `name`. Does not accept starter blocks.
-- `get_notebook`: get notebook details, blocks, input variables, and last-run metadata by notebook ID.
+- `get_notebook`: get notebook details, blocks, input variables, and last-run metadata by notebook ID. Each block carries only its `id`, `type`, `content`, and `contentHash`.
+- `get_block`: get one block by `blockId`, with its `notebookId`, `type`, `content`, `contentHash`, `metadata`, `integrationId` (set only on SQL blocks), `version`, `createdAt`, and `updatedAt`. View access is enough; a deleted block returns not found.
 - `update_notebook`: rename a notebook. Requires `notebookId` and `name`; naming it `Init` designates the project init notebook. Rename is the only supported update.
 - `duplicate_notebook`: duplicate a notebook inside its current project. Requires `notebookId`; it accepts no target-project or name argument and assigns a unique name.
 - `create_block`: create a block in a notebook. Requires `notebookId` and `type`; accepts optional `content`, `metadata`, zero-based `position` (omitted means append), `includeNotebookBlockIds`, and SQL-only `integrationId`.
