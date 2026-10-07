@@ -45,7 +45,7 @@ Through the hosted MCP server the agent can:
 - Inspect projects, notebooks, blocks and their current outputs, file inventories, input variables, and last-run metadata
 - Create projects, notebooks, and blocks; rename or duplicate notebooks; and update, delete, or reorder blocks
 - Create, attach, and detach integrations, inspect cached table structure, and map integration usage
-- Copy an existing file between projects and generate canonical project or notebook URLs
+- Write small text files such as scripts or CSVs into projects, copy an existing file between projects, and generate canonical project or notebook URLs
 - Start notebook runs, optionally with input values or on a chosen machine type, and read run history, status, errors, and snapshot output
 - Choose a project's environment (Docker image), check whether its machine is running and how big it is, start, stop, or restart it, and change its machine type or idle shutdown
 - Read Deepnote docs
@@ -130,6 +130,7 @@ Things to know:
 - `update_project` fails with `Insufficient permissions`: changing a project's static-site access, Streamlit app API access, or environment needs full access to the project, not just edit access.
 - Attaching or detaching an integration returns a conflict: inspect the project because the integration is already in the requested state.
 - `copy_file` reports `File already exists`: the target project already has the same path; the tool never overwrites.
+- `write_file` returns a different path than requested: the requested path already existed and `overwrite` was not set, so the file was written to a unique path instead.
 - A Streamlit app remains `starting`: it may be slow or may have failed during startup; check the app logs in Deepnote.
 - `update_machine` returns a conflict: the machine is running; pass `restart: true` to restart it on the new type, which clears kernel state.
 - A machine type is not available: `list_machine_types` shows why in `unavailableReason`, usually the workspace's plan or its free machine quota.
