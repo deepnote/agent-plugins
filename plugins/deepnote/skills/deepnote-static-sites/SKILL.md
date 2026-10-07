@@ -5,7 +5,7 @@ description: Use when publishing, updating, sharing, or unpublishing a static HT
 
 # Deepnote Static Sites
 
-Tool arguments and the capability boundary are defined in `deepnote-mcp`.
+Tool arguments and the capability boundary are defined in `deepnote-mcp`. A page that runs notebooks or reads their results in the browser follows `deepnote-dynamic-apps`.
 
 ## Publishing Workflow
 

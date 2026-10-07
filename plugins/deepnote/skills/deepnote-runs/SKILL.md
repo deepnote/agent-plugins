@@ -44,10 +44,26 @@ Use `list_notebook_runs` for recent runs, failed runs, run history, or anything 
 This is the single definition of how to handle `get_run` snapshots.
 
 - Omit `snapshotDelivery` for routine status checks. The response then carries `snapshotContent: null` and, when a snapshot exists, a short-lived `snapshotDownloadUrl` to a `.snapshot.deepnote` file. That URL grants access to the snapshot: never paste it into an answer unless the user asks for a download or file handoff, and never fetch it on your own.
-- Request `snapshotDelivery: "blocks"` to inspect outputs, summarize results, or diagnose a failure from execution outputs. It returns `snapshotBlocks` with block IDs, types, outputs, and metadata, but no source.
+- Request `snapshotDelivery: "blocks"` to inspect outputs, summarize results, or diagnose a failure from execution outputs. It returns `snapshotBlocks` with block IDs, types, outputs, and metadata, but no source. A block whose outputs are longer than 16,384 characters as JSON gets a notice with `outputHead` and `outputTail` in their place; add `fullOutputs: true` to lift that cap when you need the output, such as a dataframe's `row_count`. A block over 512 KiB, or past 5 MiB of outputs in the notebook, still comes back as a notice.
 - Request `snapshotDelivery: "inline"` only when the full snapshot or block source is needed, such as mapping references visible in the snapshot. Inline snapshots can be large and sensitive: summarize the relevant blocks, outputs, failures, or data shape instead of dumping raw content.
 - If the current tool schema does not expose `snapshotDelivery`, use the fields `get_run` returns as they are and do not invent `snapshotContent` or `snapshotDownloadUrl`.
 - `get_block` with `includeOutputs: true` returns a block's outputs as the live editor shows them, which live runs update and detached runs never do. Read a detached run's outputs from its snapshot, not from `get_block`.
+
+## Dataframe Outputs
+
+A block that ends in a dataframe, such as a SQL block, has an `application/vnd.deepnote.dataframe.v3+json` output. Its `rows` hold one page of the result, 10 rows unless a page size is set (`deepnote-notebooks`), while `row_count` is the total after the block's filters; for an output `type` of `query_preview`, the query itself ran with a 100-row limit. The `text/plain` and `text/html` outputs are pandas previews: a frame of up to 60 rows appears whole, a longer one only as its first and last 5 rows.
+
+- Report counts from `row_count` and `column_count`, and describe `rows` as a sample when `row_count` is larger. Never report that a query returned 10 rows because `rows` has 10.
+- When the user needs all rows, change the notebook before running it: display the data as a JSON output, as in `deepnote-dynamic-apps`, or create the block with a larger `pageSize`, as in `deepnote-notebooks`.
+
+An output of `{ "error": "..." }` means the table could not be built. For pandas frames, values in `rows` do not follow `columns[].dtype`:
+
+- Missing values are the strings `nan`, `None`, `NaT`, or `<NA>`, also inside numeric columns.
+- Booleans and nullable integers are strings, such as `"True"` and `"1.0"`. Timestamps are strings such as `"2024-01-01 00:00:00"`.
+- When a value on the page is past 2^53 or infinite, the whole column is strings on that page.
+- Every row has `_deepnote_index_column`, the frame's index. It is the last entry of `columns`, has no `stats`, and is not counted in `column_count`.
+
+Polars and Spark frames send missing values as `null` and numbers as JSON numbers.
 
 ## Sensitive Outputs
 
