@@ -1,6 +1,6 @@
 ---
 name: deepnote-workspace
-description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and copying existing files between projects."
+description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and writing project files or copying them between projects."
 ---
 
 # Deepnote Workspace
@@ -65,6 +65,10 @@ Use `list_folders` to resolve the `folderId` for project creation. Folder names 
 2. Use `attach_integration` or `detach_integration` only when the user asked to change that project. These operations return a conflict when the integration is already in the requested state; report the existing state instead of retrying.
 3. Use `create_integration` only when the user wants a new workspace integration and its type is accepted by the current tool schema. It requires integration-management permission and creates the integration without attaching it to a project.
 4. The creation response repeats connection `metadata`, which may include credentials. Report only the new integration's name, type, and ID.
+
+## Project File Writes
+
+Use `write_file` to create or replace one project file from content you already have; send binary content with `encoding: "base64"`. Check the file inventory from `get_project` first. Pass `overwrite: true` only when the user asked to replace that file. Without it, an existing path is left alone and the file lands at a generated unique path, so report the path the response returns. Publish static-site files with `publish_static_site` instead, as `deepnote-static-sites` describes.
 
 ## Cross-Project File Copy
 

@@ -19,7 +19,7 @@ Tool arguments and the capability boundary are defined in `deepnote-mcp`. Link h
 
 - Use the URL returned by `create_streamlit_app` or `list_streamlit_apps`; never build it from the app ID.
 - Creating an app requires project edit access and an available app port. A conflict can mean the entrypoint is already served or no ports remain.
-- The Streamlit tools cannot create or upload the entrypoint file, and MCP can only supply one by copying an existing file from another Deepnote project. MCP cannot delete a Streamlit app.
+- The Streamlit tools cannot create the entrypoint file. Write it first with `write_file`, or copy it from another Deepnote project with `copy_file`. MCP cannot delete a Streamlit app.
 
 ## Reporting
 
