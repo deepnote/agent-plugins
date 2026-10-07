@@ -13,9 +13,10 @@ Tool arguments are defined in `deepnote-mcp`. Running a notebook is `deepnote-ru
 2. Read the notebook with `get_notebook` before answering questions about structure, inputs, blocks, or last-run state.
 3. Preserve the distinctions between block types, notebook inputs, code, SQL, markdown, and metadata in your reasoning.
 4. When reporting inputs, include the input `name`, `type`, current `value`, and `label` when useful.
-5. When SQL connection usage matters, confirm it with `list_integrations` and the integration usage tools in `deepnote-workspace` instead of inferring from names; use `get_integration` for cached table and column context.
-6. Ground reviews and explanations in specific notebook or block names and IDs when useful.
-7. For recent, failed, or historical runs, use `deepnote-runs`.
+5. Call `get_block` when one block's `metadata` (input configuration, callout color, todo state) or its current output in the editor matters; `get_notebook` returns neither. Pass `includeOutputs: true` for the output, and `fullOutputs: true` only when the user needs a long output whole.
+6. When SQL connection usage matters, confirm it with `get_block`, `list_integrations`, and the integration usage tools in `deepnote-workspace` instead of inferring from names; use `get_integration` for cached table and column context.
+7. Ground reviews and explanations in specific notebook or block names and IDs when useful.
+8. For recent, failed, or historical runs, use `deepnote-runs`.
 
 ## Inspection Output
 
@@ -67,7 +68,7 @@ Use this workflow to create a project or notebook, rename or duplicate a noteboo
 4. Use `create_block` for each new block. Omit `position` to append, or pass a zero-based `position` when placement matters. Pass `includeNotebookBlockIds: true` when the final order matters, especially for ordered inserts and multi-block scaffolds.
 5. Use `update_notebook` only to rename a notebook. Use `duplicate_notebook` to copy one within its current project; rename the returned copy afterward when the user requested a specific name.
 6. Use `update_block` to change an existing block in place; it never creates a new block. Use `delete_block` only for a block the user clearly asked to remove. Use `reorder_notebook_blocks` to move existing blocks; it preserves the relative order of blocks omitted from `blockIds` and returns the final active order.
-7. Verify meaningful edits with `get_notebook` when order, integration attachment, or multi-block content matters.
+7. Verify meaningful edits with `get_notebook` when order or multi-block content matters, and with `get_block` when a block's metadata or SQL integration matters.
 8. Do not run the notebook after editing unless the user explicitly asks or confirms a final run prompt.
 
 ## Active Notebook Rule
@@ -99,7 +100,7 @@ For input blocks, put block-type configuration in `metadata` and keep `content` 
 
 ## Block Update
 
-Before updating, call `get_notebook` and identify the target block ID, its current type, and its content. When the current SQL integration matters, confirm it with `list_integrations` and the integration usage tools; do not infer it from block content. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
+Before updating, call `get_notebook` and identify the target block ID, its current type, and its content. When the current SQL integration matters, read the block's `integrationId` with `get_block` and resolve it with `list_integrations`; do not infer it from block content. Ask a clarifying question only when the target block or the requested replacement is ambiguous.
 
 Send the full replacement `content`; partial snippets are not merged. For SQL blocks, `update_block` can change `content`, `integrationId`, or both in one call, following the same `integrationId` rules as block creation. `update_block` cannot change a block's type, update arbitrary metadata, or edit saved input defaults; say so instead of claiming those changes were applied. Use `delete_block` to remove a block.
 
