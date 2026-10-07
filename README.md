@@ -45,7 +45,7 @@ Through the hosted MCP server the agent can:
 - Inspect projects, notebooks, blocks and their current outputs, file inventories, input variables, and last-run metadata
 - Create projects, notebooks, and blocks; rename or duplicate notebooks; and update, delete, or reorder blocks
 - Create, attach, and detach integrations, inspect cached table structure, and map integration usage
-- Write project files, copy an existing file between projects, and generate canonical project or notebook URLs
+- Write small text files such as scripts or CSVs into projects, copy an existing file between projects, and generate canonical project or notebook URLs
 - Start notebook runs, optionally with input values or on a chosen machine type, and read run history, status, errors, and snapshot output
 - Choose a project's environment (Docker image), check whether its machine is running and how big it is, start, stop, or restart it, and change its machine type or idle shutdown
 - Read Deepnote docs

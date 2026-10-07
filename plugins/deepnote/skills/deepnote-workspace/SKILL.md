@@ -68,7 +68,7 @@ Use `list_folders` to resolve the `folderId` for project creation. Folder names 
 
 ## Project File Writes
 
-Use `write_file` to create or replace one project file from content you already have; send binary content with `encoding: "base64"`. Check the file inventory from `get_project` first. Pass `overwrite: true` only when the user asked to replace that file. Without it, an existing path is left alone and the file lands at a generated unique path, so report the path the response returns. Publish static-site files with `publish_static_site` instead, as `deepnote-static-sites` describes.
+Use `write_file` to create or replace one small, text-based project file, such as a script, config, or CSV, from content you already have. Reserve `encoding: "base64"` for small binary files. Do not push large files or big binary blobs through it: MCP has no supported way to upload them, so say so instead. Check the file inventory from `get_project` first. Pass `overwrite: true` only when the user asked to replace that file. Without it, an existing path is left alone and the file lands at a generated unique path, so report the path the response returns. Publish static-site files with `publish_static_site` instead, as `deepnote-static-sites` describes.
 
 ## Cross-Project File Copy
 
