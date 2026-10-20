@@ -50,7 +50,7 @@ Use `get_project` for a specific project's type, containing folder, notebooks, a
 
 To put a project on another image, resolve the environment with `list_environments` and pass its `id` as `environmentId` to `create_project` or `update_project`. Switching the environment of an existing project restarts its running machine, which clears kernel state.
 
-Use `list_folders` to resolve the `folderId` for project creation. Folder names are not unique, so resolve nested paths by walking `parentFolderId`; omit `nameContains` when the complete hierarchy is needed.
+Use `list_folders` to resolve the `folderId` for creating or moving a project, and create a missing folder with `create_folder`. Folder names are not unique, so resolve nested paths by walking `parentFolderId`; omit `nameContains` when the complete hierarchy is needed.
 
 ## Integration Mapping Workflow
 
