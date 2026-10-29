@@ -49,7 +49,7 @@ Through the hosted MCP server the agent can:
 - Start notebook runs, optionally with input values or on a chosen machine type, and read run history, status, errors, and snapshot output
 - Choose a project's environment (Docker image), check whether its machine is running and how big it is, start, stop, or restart it, and change its machine type or idle shutdown
 - Read Deepnote docs
-- Publish a small HTML/CSS/JavaScript site or serve an existing project file as a Streamlit app
+- Build data apps and Streamlit apps, each in a project of its own
 
 ## Good first prompts
 
@@ -65,7 +65,8 @@ Through the hosted MCP server the agent can:
 - `Run this notebook on a machine with at least 32 GB of memory.`
 - `Show me where this Deepnote integration is used.`
 - `Attach my Snowflake integration to this project.`
-- `Serve apps/dashboard.py from this project as a Streamlit app.`
+- `Build a data app that shows weekly signups by country.`
+- `Build a Streamlit app for exploring sales by region.`
 - `Copy utils/helpers.py from this project into my Sales Analysis project.`
 - `Look up the Deepnote docs for scheduled notebooks.`
 

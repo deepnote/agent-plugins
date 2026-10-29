@@ -6,7 +6,7 @@ Guidelines for AI coding agents working on the Deepnote agent plugins.
 
 The plugin is mostly documentation, so almost every change here has a documentation counterpart. Before opening a pull request, check whether the change makes any of these stale, and update them in the same pull request:
 
-- `plugins/deepnote/skills/*/SKILL.md` and their reference files - what the agent is told about each Deepnote surface (MCP tools, notebooks, runs, links, workspaces, static sites, Streamlit apps)
+- `plugins/deepnote/skills/*/SKILL.md` and their reference files - what the agent is told about each Deepnote surface (MCP tools, notebooks, runs, links, workspaces, data apps, Streamlit apps)
 - `README.md` - installation, authentication, and what the plugin can do
 - `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json` - plugin names, descriptions, and keywords shown in the marketplaces
 
