@@ -13,8 +13,8 @@ Tool arguments and the capability boundary are defined in `deepnote-mcp`.
 2. If a local shell and the Deepnote CLI are available, prefer `deepnote publish ./dist --project-id <uuid>`, especially for local builds and larger sites.
 3. If deployment must happen through hosted MCP, use `publish_static_site`. Send the final file contents in one call.
 4. Use the canonical URL returned by the publish operation or the project's `staticFiles.url` from `get_project`. Never construct a static-site hostname.
-5. Read the current sharing and viewer API state with `get_project`. To change access without changing files, use `update_project` with `staticFiles.sharingEnabled` and/or `staticFiles.apiAccessEnabled`. Disabling sharing also disables viewer API access; re-enabling sharing serves the retained files again.
-6. Do not execute a notebook to write published files, and do not look for generic file-write tools. `publish_static_site` writes only beneath the static-site root, while `copy_file` only copies an existing file between projects; neither uploads arbitrary project files.
+5. Read the current sharing and viewer API state with `get_project`. To change access without changing files, use `update_project` with `staticFiles.sharingEnabled` and/or `staticFiles.apiAccessEnabled`. Disabling sharing also disables viewer API access; re-enabling sharing serves the retained files again. In a data app project, `staticFiles.published` publishes or unpublishes the app for its viewers; editors can always open it.
+6. Do not execute a notebook to write published files. Use `publish_static_site` rather than one `write_file` call per file: it writes the whole site in one call, can prune stale files, and turns on sharing.
 
 ## Safety
 

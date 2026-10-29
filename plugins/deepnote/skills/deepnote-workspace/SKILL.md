@@ -1,6 +1,6 @@
 ---
 name: deepnote-workspace
-description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and copying existing files between projects."
+description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and writing, copying, or deleting project files."
 ---
 
 # Deepnote Workspace
@@ -55,7 +55,7 @@ Use `list_folders` to resolve the `folderId` for creating or moving a project, a
 ## Integration Mapping Workflow
 
 1. Use `list_integrations` to resolve an integration name or type to an ID.
-2. Use `get_integration` for cached structure. The response includes integration details plus `tablesJsonPreview`, the serialized matching cached table structure, and `tablesTruncated`. Parse `tablesJsonPreview` as JSON only when `tablesTruncated` is false. When it is true, use `tableNames` to choose narrower `databaseName`, `schemaName`, or `tableName` filters and call `get_integration` again. A preview of `[]` means no matching cached structure is visible through MCP, not that the live database lacks the table.
+2. Use `get_integration` for cached structure. The response includes integration details plus `tablesJsonPreview`, the serialized matching cached table structure, and `tablesTruncated`. Parse `tablesJsonPreview` as JSON only when `tablesTruncated` is false. When it is true, use `tableNames` to choose narrower `databaseName`, `schemaName`, or `tableName` filters, or describe the tables needed in `search`, and call `get_integration` again. A preview of `[]` means no matching cached structure is visible through MCP, not that the live database lacks the table.
 3. Use `list_integration_project_usages` for connected projects, `list_integration_notebook_usages` for notebooks with SQL blocks that use the integration, and `list_integration_block_usages` for the exact SQL blocks and their content. Narrow any of them with `projectId`.
 4. Say that structure is cached. Do not present it as a live database scan, and do not claim access to row previews, query results, file metadata, or environment configuration unless an exposed MCP tool or a run snapshot provided them.
 
@@ -75,3 +75,10 @@ Standalone integration table, only when explicitly requested:
 | Integration | Type | Visible Notebook Usage |
 | --- | --- | --- |
 | `Integration name` | `type` | `Project / Notebook` from usage tools, `None found`, or `Usage not checked` |
+
+## Project File Writes And Deletes
+
+1. Use `write_file` only for small text-based files, such as a script, config, or CSV, never to upload large files or big binary blobs. Check the project's file inventory with `get_project` first.
+2. Pass `overwrite: true` only when the user asked to replace an existing file. Without it, a taken path gets a generated unique path, so report the returned `file.path`.
+3. Use `delete_file` only for a file the user named, after confirming its path with `get_project`. It cannot be undone, and it deletes a Streamlit app that serves the file, so check `list_streamlit_apps` first.
+4. Both require edit access to the project.

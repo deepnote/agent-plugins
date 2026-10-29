@@ -1,6 +1,6 @@
 ---
 name: deepnote-notebooks
-description: "Use when reading or reviewing Deepnote notebooks, creating projects or notebooks, renaming or duplicating notebooks, and creating, editing, deleting, or reordering blocks through the Deepnote MCP server."
+description: "Use when reading or reviewing Deepnote notebooks, creating or deleting projects or notebooks, renaming or duplicating notebooks, and creating, editing, deleting, or reordering blocks through the Deepnote MCP server."
 ---
 
 # Deepnote Notebooks
@@ -60,7 +60,7 @@ Keep raw code excerpts short; summarize large cells and mention block IDs when u
 
 ## Editing Workflow
 
-Use this workflow to create a project or notebook, rename or duplicate a notebook, add or revise a block, delete or reorder blocks, or scaffold starter content. Each edit needs its matching tool: `create_project`, `create_notebook`, `update_notebook`, `duplicate_notebook`, `create_block`, `update_block`, `delete_block`, or `reorder_notebook_blocks`. If that tool is not in the current session, say which capability is missing.
+Use this workflow to create or delete a project or notebook, rename or duplicate a notebook, add or revise a block, delete or reorder blocks, or scaffold starter content. Each edit needs its matching tool: `create_project`, `delete_project`, `create_notebook`, `delete_notebook`, `update_notebook`, `duplicate_notebook`, `create_block`, `update_block`, `delete_block`, or `reorder_notebook_blocks`. If that tool is not in the current session, say which capability is missing.
 
 1. Resolve ambiguous names and IDs before writing: `get_me` for workspace identity, `search` or `list_projects` for projects and notebooks, `list_folders` for project placement, `get_notebook` for current notebook state, and `list_integrations` for SQL connections.
 2. Treat `create_project`, `create_notebook`, `duplicate_notebook`, and `create_block` as non-idempotent. Repeating a call creates another resource.
@@ -82,6 +82,10 @@ Creation workflows keep exactly one active target notebook, and every later bloc
 ## Notebook Rename And Duplication
 
 `update_notebook` changes only the name. Naming a standard project's notebook `Init` designates it as the project init notebook; agent and single-notebook projects reject renames and duplications. `duplicate_notebook` creates a copy in the same project with an automatically generated unique name and accepts no target project or name. Use the returned notebook ID for any requested follow-up rename or edit.
+
+## Notebook And Project Deletion
+
+Delete a notebook or project only when the user named it. Resolve it with `get_notebook` or `get_project` first, and name what will be deleted. `delete_notebook` saves a project version first, so the notebook can be restored from version history; agent projects reject it. `delete_project` moves the project with all its notebooks to the trash, where it can be restored for 30 days, deletes its schedules for good, and stops its machine. After deleting, say how to restore it.
 
 ## Block Creation
 
