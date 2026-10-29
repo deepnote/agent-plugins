@@ -13,7 +13,7 @@ A Streamlit app project has two parts: the app, Python code in `app.py` hosted o
 
 1. Create the project with `create_project` and `projectType: "streamlit_app"`. It starts with its notebook and a placeholder `app.py` that is already served, with `streamlitAppApiAccessEnabled` on.
 2. Get the app ID and URL from `list_streamlit_apps`. Do not call `create_streamlit_app`; the project serves one app.
-3. Look for data in the project's integrations and files first. If nothing fits, use clearly labeled sample data and offer to connect real data, unless the user named specific data: then ask where it is.
+3. Look for data in the project's integrations and files first, then build a small, polished first version. If nothing fits, use clearly labeled sample data and offer to connect real data, unless the user named specific data: then ask where it is.
 
 ## Writing The App
 
@@ -22,8 +22,9 @@ A Streamlit app project has two parts: the app, Python code in `app.py` hosted o
 - Use the notebook to explore data and test queries before moving them into the app. The app runs separately and can't see the notebook's variables, so it loads its own data.
 - To query an integration attached to the project, call `deepnote_toolkit.set_integration_env()` at the top of the app, then `deepnote_toolkit.execute_sql(query, 'SQL_<INTEGRATION_ID>')` with the integration ID uppercased and dashes replaced by underscores. For OAuth integrations, use `get_snowflake_connection(integration_id)` or `get_bigquery_client(integration_id)` from `deepnote_toolkit.streamlit_data_apps`, so each viewer sees data with their own access.
 - Every interaction reruns the whole script, so cache data loading. `@st.cache_data(ttl=...)` is shared by all viewers, so use it only for data that is the same for everyone; keep data from OAuth integrations in `st.session_state`.
+- Start the app with `st.set_page_config(layout="wide")`, put filters in `st.sidebar`, and show key numbers with `st.metric` in `st.columns`. Lay out dashboards as a title with one line of context, filters, a row of key numbers, one to three main charts, then a detail table. Format numbers and dates for reading, and label units.
 - For AI-written text, such as a summary of the data, keep an agent block as the last block of the notebook and ask for that text in its prompt. In the app, compute `StreamlitCloudRunner('<notebook ID>').run({}).agent_text()` from `deepnote_toolkit.streamlit` once per session in `st.session_state` and show it with `st.markdown`. It runs the notebook as the viewer through the app's API access.
-- The theme is in `.streamlit/config.toml` next to `app.py`. Keep the Deepnote-like default unless the user asks for another look.
+- The theme is in `.streamlit/config.toml` next to `app.py`. Keep the Deepnote-like default unless the user asks for another look. Colors apply on the next rerun; font changes may need an app restart.
 - Never put secrets or credentials in the app's code.
 
 ## Testing
