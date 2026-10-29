@@ -7,7 +7,7 @@ description: Use when creating, changing, testing, or publishing a Deepnote data
 
 Tool arguments and the capability boundary are defined in `deepnote-mcp`. Notebook edits follow `deepnote-notebooks`, runs follow `deepnote-runs`, and links follow `deepnote-links`.
 
-A data app project has two parts: the page, a responsive HTML page in `_deepnote_static/index.html` with inline CSS and JavaScript, and one notebook that runs the SQL and Python behind it. Build web apps in these projects, not as static sites in other projects.
+A data app project has two parts: the page, a responsive HTML page in `_deepnote_static/index.html` with inline CSS and JavaScript, and one notebook that runs the SQL and Python behind it.
 
 ## Creating An App
 

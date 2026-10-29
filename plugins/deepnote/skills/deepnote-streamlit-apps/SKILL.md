@@ -7,7 +7,7 @@ description: Use when creating, changing, testing, or checking a Deepnote Stream
 
 Tool arguments and the capability boundary are defined in `deepnote-mcp`. Notebook edits follow `deepnote-notebooks`, runs follow `deepnote-runs`, and links follow `deepnote-links`.
 
-A Streamlit app project has two parts: the app, Python code in `app.py` hosted on the project machine, and one notebook for exploring data and testing code. Build Streamlit apps in these projects, not by serving a file from a standard project.
+A Streamlit app project has two parts: the app, Python code in `app.py` hosted on the project machine, and one notebook for exploring data and testing code.
 
 ## Creating An App
 
