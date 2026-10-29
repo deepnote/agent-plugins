@@ -85,7 +85,7 @@ Creation workflows keep exactly one active target notebook, and every later bloc
 
 ## Notebook And Project Deletion
 
-Delete a notebook or project only when the user named it. Resolve it with `get_notebook` or `get_project` first, and name what will be deleted. `delete_notebook` saves a project version first, so the notebook can be restored from version history; single-notebook projects reject it. `delete_project` moves the project with all its notebooks to the trash, where it can be restored for 30 days, deletes its schedules for good, and stops its machine. After deleting, say how to restore it.
+Delete a notebook or project only when the user named it. Resolve it with `get_notebook` or `get_project` first, and name what will be deleted. `delete_notebook` saves a project version first, so the notebook can be restored from version history, which rolls back every notebook in the project to that version; single-notebook projects reject it. `delete_project` moves the project with all its notebooks to the trash, where it can be restored for 30 days, deletes its schedules for good, and stops its machine. After deleting, say how to restore it.
 
 ## Block Creation
 
