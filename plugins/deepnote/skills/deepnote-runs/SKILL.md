@@ -21,7 +21,7 @@ Tool arguments, pagination, and the capability boundary are defined in `deepnote
 
 - Detached runs, the default, start a machine of their own. To size one for the workload, call `list_machine_types`, pick an `available` type with enough `vCpus`, `memoryGiB`, or `gpuCount`, and pass its `id` as `machineType` to `create_run`. The project's machine type stays the same.
 - Live runs (`detached: false`) use the project machine and start it when it is stopped. Use `get_machine` to check its status and size, `start_machine` to have it ready ahead of time, and `restart_machine` when it is in the `error` status. After a restart, a stop, or an idle shutdown the kernel is fresh, so rerun the blocks that set up the state first.
-- To make the project machine bigger or smaller for live work, use `update_machine` with `type`. On a running machine this needs `restart: true`, which clears kernel state, so ask first.
+- To make the project machine bigger or smaller for live work, use `update_machine` with `type`. On a running machine this needs `restart: true`, which clears kernel state, so ask first. A custom machine type only works for projects in its sandbox environment; when the project is in another one, also pass the type's `sandboxEnvironmentId` from `list_machine_types`.
 - Read the machine size from `get_machine`, not from code such as `os.cpu_count()`, which reports the host's cores rather than the machine's.
 
 ## Run Inputs
@@ -44,7 +44,7 @@ Use `list_notebook_runs` for recent runs, failed runs, run history, or anything 
 This is the single definition of how to handle `get_run` snapshots.
 
 - Omit `snapshotDelivery` for routine status checks. The response then carries `snapshotContent: null` and, when a snapshot exists, a short-lived `snapshotDownloadUrl` to a `.snapshot.deepnote` file. That URL grants access to the snapshot: never paste it into an answer unless the user asks for a download or file handoff, and never fetch it on your own.
-- Request `snapshotDelivery: "blocks"` to inspect outputs, summarize results, or diagnose a failure from execution outputs. It returns `snapshotBlocks` with block IDs, types, outputs, and metadata, but no source.
+- Request `snapshotDelivery: "blocks"` to inspect outputs, summarize results, or diagnose a failure from execution outputs. It returns `snapshotBlocks` with block IDs, types, outputs, and metadata, but no source. Outputs longer than 16,384 characters as JSON are replaced by a notice with `outputHead` and `outputTail`; pass `fullOutputs: true` only when the user needs a long output whole.
 - Request `snapshotDelivery: "inline"` only when the full snapshot or block source is needed, such as mapping references visible in the snapshot. Inline snapshots can be large and sensitive: summarize the relevant blocks, outputs, failures, or data shape instead of dumping raw content.
 - If the current tool schema does not expose `snapshotDelivery`, use the fields `get_run` returns as they are and do not invent `snapshotContent` or `snapshotDownloadUrl`.
 - `get_block` with `includeOutputs: true` returns a block's outputs as the live editor shows them, which live runs update and detached runs never do. Read a detached run's outputs from its snapshot, not from `get_block`.
