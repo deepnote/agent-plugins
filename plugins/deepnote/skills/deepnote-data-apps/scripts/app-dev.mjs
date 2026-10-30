@@ -17,9 +17,9 @@ const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> 
 
   --token        Viewer token from the create_data_app_token MCP tool. It is never printed.
   --api-origin   apiOrigin from the same create_data_app_token result.
-  --check        Load the page headlessly in an installed Chrome or Chromium, print its errors and API calls,
-                 and exit non-zero on an app error, a failed API call, or a timeout. Without it, serve a preview
-                 to open in a browser until stopped.
+  --check        Load the page headlessly in an installed Chrome, Chromium, or Edge, print its errors and API
+                 calls, and exit non-zero on an app error, a failed API call, or a timeout. Without it, serve a
+                 preview to open in a browser until stopped.
   --port         Port of the preview page; the app is served on the next one. Default 4747, or free ports
                  with --check.
   --timeout      Seconds --check waits for the page to settle. Default 60.
@@ -149,22 +149,33 @@ function listen(server, port) {
   })
 }
 
-function findChrome() {
-  const executables =
-    {
-      darwin: ['/Applications', path.join(os.homedir(), 'Applications')].flatMap(dir => [
-        path.join(dir, 'Google Chrome.app/Contents/MacOS/Google Chrome'),
-        path.join(dir, 'Chromium.app/Contents/MacOS/Chromium'),
-      ]),
-      win32: [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)'], process.env.LOCALAPPDATA]
-        .filter(Boolean)
-        .map(dir => path.join(dir, 'Google/Chrome/Application/chrome.exe')),
-    }[process.platform] ??
-    (process.env.PATH ?? '')
-      .split(path.delimiter)
-      .flatMap(dir =>
-        ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].map(name => path.join(dir, name))
-      )
+/** Finds an installed Chrome, Chromium, or Edge, in that order. They all speak the same DevTools protocol. */
+function findBrowser() {
+  const [names, dirs] = {
+    darwin: [
+      [
+        'Google Chrome.app/Contents/MacOS/Google Chrome',
+        'Chromium.app/Contents/MacOS/Chromium',
+        'Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      ],
+      ['/Applications', path.join(os.homedir(), 'Applications')],
+    ],
+    win32: [
+      ['Google/Chrome/Application/chrome.exe', 'Microsoft/Edge/Application/msedge.exe'],
+      [process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)'], process.env.LOCALAPPDATA].filter(Boolean),
+    ],
+  }[process.platform] ?? [
+    [
+      'google-chrome',
+      'google-chrome-stable',
+      'chromium',
+      'chromium-browser',
+      'microsoft-edge',
+      'microsoft-edge-stable',
+    ],
+    (process.env.PATH ?? '').split(path.delimiter),
+  ]
+  const executables = names.flatMap(name => dirs.map(dir => path.join(dir, name)))
   return [process.env.CHROME_PATH, ...executables].find(executable => executable && fs.existsSync(executable))
 }
 
@@ -243,10 +254,10 @@ async function waitForPage(state, timeoutMs) {
 }
 
 async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
-  const executable = findChrome()
+  const executable = findBrowser()
   if (!executable) {
     fail(
-      'No Chrome or Chromium found. Install one, or set CHROME_PATH to its executable; this script never downloads a browser.'
+      'No Chrome, Chromium, or Edge found. Install one, or set CHROME_PATH to its executable; this script never downloads a browser.'
     )
   }
   const state = {
