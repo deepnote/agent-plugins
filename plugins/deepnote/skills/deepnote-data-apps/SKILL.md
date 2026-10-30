@@ -34,6 +34,36 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 - Read the current page once with `read_file`, unless you wrote it in this conversation, and save it as `index.html` in a local folder of its own. Edit that file, and once the local check in Testing passes, push it with `write_file` at `_deepnote_static/index.html` and `overwrite: true`. Where you cannot run local commands, write the whole page with `write_file` directly.
 - Start its `<head>` with `<script src="https://deepnote.com/static/app-client/v1.js"></script>`, before any other script, and load CDN scripts with `crossorigin="anonymous"`. The script exposes `Deepnote.connect()`, not React components or `DeepnoteApp`.
+- Style the page with Tailwind CSS 4.3.3. After the app client script, add the Tailwind browser build, Inter, and the default theme below, then use its colors in classes (`bg-surface`, `text-muted`, `border-border`, `bg-accent`, `text-positive`, ...). Its dark values apply on their own, so don't add `dark:` variants for theme colors. Chart code reads series colors with `getComputedStyle(document.documentElement).getPropertyValue('--color-chart-1')`.
+
+  ```html
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <style type="text/tailwindcss">
+    @theme static {
+      --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+      --color-surface: #ffffff; --color-surface-subtle: #f8fafc; --color-surface-muted: #edf2f7;
+      --color-fg: #334052; --color-muted: #606f85; --color-subtle: #8e9db4;
+      --color-border: #dde4ee; --color-border-strong: #c2cddc;
+      --color-accent: #146efe; --color-accent-hover: #0a56d0;
+      --color-positive: #059669; --color-attention: #aa5413; --color-critical: #e11d48;
+      --color-chart-1: #2266d3; --color-chart-2: #cc8bff; --color-chart-3: #0e9384; --color-chart-4: #8dca4c; --color-chart-5: #f9732c;
+      --color-chart-6: #c8338a; --color-chart-7: #eec026; --color-chart-8: #61646c; --color-chart-9: #4e2b89; --color-chart-10: #6e7ba4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-surface: #141c2f; --color-surface-subtle: #1a273d; --color-surface-muted: #233149;
+        --color-fg: #c2cddc; --color-muted: #8e9db4; --color-subtle: #606f85;
+        --color-border: #334052; --color-border-strong: #46566d;
+        --color-accent: #498ffe; --color-accent-hover: #79acfe;
+        --color-positive: #10b981; --color-attention: #e69a1a; --color-critical: #f43f5e;
+      }
+    }
+    body { @apply bg-surface text-fg text-sm antialiased; }
+  </style>
+  ```
+
+- By default, make it calm and compact like Deepnote without copying Deepnote's UI: neutral surfaces with one blue accent, 1px borders, `rounded-lg` controls and `rounded-xl` cards, sentence case, solid backgrounds without gradients, no emoji or decorative icons, shadows only on floating elements, and at most one primary button per view. When the user asks for another look or their brand, change the theme and classes freely.
 - Connect with `const notebook = Deepnote.connect().notebook('<notebook ID>')`, using the notebook ID from `get_project`.
   - On load, render `const {appData, agentBlockSummary} = await notebook.appData()`. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.
   - `const {run} = await notebook.run(values, {onProgress})` runs the whole notebook for this viewer. When `run.status === 'success'`, render `await notebook.appData()` again. Run it on submission, or with `{}` from a refresh button when the app has no inputs.
@@ -41,7 +71,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 - Show loading, empty, and error states, prevent duplicate submissions, and handle rejected calls, missing results, and `run.error`. When a failed run has no error text, show its status and point to run history.
 - Lay out dashboards as a title with one line of context, filters, a row of key numbers, one to three main charts, then a detail table. Format numbers and dates for reading, and label units.
 - To show another app's data, connect to that app's notebook instead of copying its queries. Find its ID with `search`, check its JSON output with a read-only run, and do not change that notebook. Its keys can change, so show an error state when they are missing.
-- Never put API keys, tokens, `.env` contents, or other secrets in the page. Keep the calm, Deepnote-like look unless the user asks for another.
+- Never put API keys, tokens, `.env` contents, or other secrets in the page.
 
 ## Testing
 
