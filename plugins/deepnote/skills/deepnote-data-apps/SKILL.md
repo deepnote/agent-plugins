@@ -49,7 +49,7 @@ Test a changed-input submission with `create_run`, its `inputs`, and `detachedRu
 
 Check the page locally before pushing it, against the same API and data it gets in Deepnote:
 
-1. Mint a viewer token with `create_app_token` for the project. Pass it only on the command line; never write it into files or answers.
+1. Mint a viewer token with `create_data_app_token` for the project. Pass it only on the command line; never write it into files or answers.
 2. Run `node scripts/app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> --check`, with the script from this skill's directory. It needs Node 18 or later and an installed Chrome or Chromium. It embeds the page the way Deepnote does, prints the page's errors and API calls, and exits non-zero on an app error, a failed API call, or a timeout. Fix the page and rerun until it passes. The token is short-lived: when the script says the API rejected it, mint a new one and rerun.
 3. Look at the page. With a browser tool, run the script without `--check` in the background, open the preview URL it prints, and try the inputs; runs started there are real runs. Without one, say that only the check's output was reviewed. Give the user the preview URL when they want to try the page before you push it.
 4. Push the page.

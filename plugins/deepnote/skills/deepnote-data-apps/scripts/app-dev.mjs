@@ -15,8 +15,8 @@ import { parseArgs } from 'node:util'
 
 const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> [--check]
 
-  --token        Viewer token from the create_app_token MCP tool. It is never printed.
-  --api-origin   apiOrigin from the same create_app_token result.
+  --token        Viewer token from the create_data_app_token MCP tool. It is never printed.
+  --api-origin   apiOrigin from the same create_data_app_token result.
   --check        Load the page headlessly in an installed Chrome or Chromium, print its errors and API calls,
                  and exit non-zero on an app error, a failed API call, or a timeout. Without it, serve a preview
                  to open in a browser until stopped.
@@ -292,7 +292,7 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
     if (call.status === 401 && !tokenRejected) {
       tokenRejected = true
       console.log(
-        'The Deepnote API rejected the app token, most likely because it expired. Mint a new one with create_app_token and rerun.'
+        'The Deepnote API rejected the data app token, most likely because it expired. Mint a new one with create_data_app_token and rerun.'
       )
     }
     state.apiCalls.delete(requestId)
