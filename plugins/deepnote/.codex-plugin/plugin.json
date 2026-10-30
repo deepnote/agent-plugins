@@ -1,7 +1,7 @@
 {
   "name": "deepnote",
-  "version": "0.9.0",
-  "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations and project machines, build data apps and Streamlit apps, generate links, read docs, and run notebooks from Codex.",
+  "version": "0.9.1",
+  "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations and project machines, build data apps and Streamlit apps, generate links, read docs, and run notebooks from ChatGPT and Codex.",
   "author": {
     "name": "Deepnote",
     "url": "https://deepnote.com"
@@ -21,8 +21,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Deepnote",
-    "shortDescription": "Work with Deepnote workspaces, projects, notebooks, and docs from Codex.",
-    "longDescription": "Adds Deepnote skills and hosted MCP configuration for Codex. Use it to identify the current workspace, search resources, inspect projects, read, write, copy, and delete project files, manage integrations, choose project environments, start, stop, and resize project machines, generate project and notebook links, edit notebook structure, build data apps and Streamlit apps, read Deepnote docs, run notebooks with optional inputs, and summarize run history, status, and outputs.",
+    "shortDescription": "Analyze data with Deepnote",
+    "longDescription": "Work with Deepnote workspaces, projects, and notebooks from ChatGPT and Codex. Search resources, inspect projects, read, write, copy, and delete project files, manage integrations, choose project environments, start, stop, and resize project machines, generate project and notebook links, edit notebook structure, build data apps and Streamlit apps, read Deepnote docs, run notebooks with optional inputs, and summarize run history, status, and outputs. Requires a Deepnote account with access to the workspace and permission for each requested action; a workspace admin must enable MCP access.",
     "developerName": "Deepnote",
     "category": "Data & Analytics",
     "capabilities": [
@@ -31,12 +31,11 @@
       "Write"
     ],
     "websiteURL": "https://deepnote.com",
+    "supportURL": "https://deepnote.com/docs/support",
     "privacyPolicyURL": "https://deepnote.com/privacy",
     "termsOfServiceURL": "https://deepnote.com/terms",
     "defaultPrompt": [
       "Search my Deepnote workspace.",
-      "Which Deepnote workspace am I connected to?",
-      "Give me links to my Deepnote projects.",
       "Inspect this Deepnote notebook.",
       "Run a Deepnote notebook with inputs."
     ],
