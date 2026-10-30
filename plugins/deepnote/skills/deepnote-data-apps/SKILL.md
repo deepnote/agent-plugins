@@ -32,7 +32,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## The Page
 
-- Read the current page with `read_file` before changing it, unless you wrote it in this conversation, and write the whole page with `write_file` at `_deepnote_static/index.html` and `overwrite: true`.
+- Read the current page once with `read_file`, unless you wrote it in this conversation, and save it as `index.html` in a local folder of its own. Edit that file, and once the local check in Testing passes, push it with `write_file` at `_deepnote_static/index.html` and `overwrite: true`. Where you cannot run local commands, write the whole page with `write_file` directly.
 - Start its `<head>` with `<script src="https://deepnote.com/static/app-client/v1.js"></script>`, before any other script, and load CDN scripts with `crossorigin="anonymous"`. The script exposes `Deepnote.connect()`, not React components or `DeepnoteApp`.
 - Connect with `const notebook = Deepnote.connect().notebook('<notebook ID>')`, using the notebook ID from `get_project`.
   - On load, render `const {appData, agentBlockSummary} = await notebook.appData()`. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.
@@ -45,7 +45,16 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## Testing
 
-Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. MCP cannot load the page in a browser, so say the page itself was not checked and ask the user to open it; do not install browser tools in the notebook to check it. Delete scratch blocks when done.
+Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Delete scratch blocks when done.
+
+Check the page locally before pushing it, against the same API and data it gets in Deepnote:
+
+1. Mint a viewer token with `create_app_token` for the project. Pass it only on the command line; never write it into files or answers.
+2. Run `node scripts/app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> --check`, with the script from this skill's directory. It needs Node 18 or later and an installed Chrome or Chromium. It embeds the page the way Deepnote does, prints the page's errors and API calls, saves `screenshot.png` in the current directory, and exits non-zero on an app error, a failed API call, or a timeout.
+3. Fix the page and rerun until the check passes, and look at the screenshot. The token is short-lived: when the script says the API rejected it, mint a new one and rerun.
+4. Push the page. To let the user try it first, run the script without `--check` in the background and give them the preview URL it prints; runs started there are real runs.
+
+A client that cannot run local commands, such as ChatGPT or claude.ai, cannot load the page: say the page itself was not checked and ask the user to open it. Do not install browser tools in the notebook to check it.
 
 ## Publishing
 
