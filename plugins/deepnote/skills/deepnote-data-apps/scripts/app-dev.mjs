@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 // Previews a data app page locally, embedded the way Deepnote embeds it, against the real Deepnote API.
 //
-// Two loopback origins stand in for Deepnote: one serves the page folder with Deepnote's rules, the other
-// serves a stand-in Deepnote page that embeds it, answers the app client's token requests, and proxies
-// /v2 API calls. The page only ever sees short-lived stand-in tokens; the proxy swaps in the real token,
-// which is never printed. Built-in modules only.
+// Two loopback origins stand in for Deepnote: one serves the page folder with Deepnote's rules, the other serves a
+// stand-in Deepnote page that embeds it and answers the app client's token requests. The page calls the API itself,
+// as it does in Deepnote. --check loads it in an installed Chrome and reads the app's messages and API calls over
+// the DevTools protocol. Built-in modules only.
 
 import { spawn } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
@@ -18,9 +17,9 @@ const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> 
 
   --token        Viewer token from the create_app_token MCP tool. It is never printed.
   --api-origin   apiOrigin from the same create_app_token result.
-  --check        Load the page headlessly in an installed Chrome or Chromium, save screenshot.png, and exit
-                 non-zero on an app error, a failed API call, or a timeout. Without it, serve a preview to
-                 open in a browser until stopped.
+  --check        Load the page headlessly in an installed Chrome or Chromium, print its errors and API calls,
+                 and exit non-zero on an app error, a failed API call, or a timeout. Without it, serve a preview
+                 to open in a browser until stopped.
   --port         Port of the preview page; the app is served on the next one. Default 4747, or free ports
                  with --check.
   --timeout      Seconds --check waits for the page to settle. Default 60.
@@ -47,26 +46,12 @@ const CONTENT_TYPES = {
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
 }
-// The app client asks for a new token a minute before this, so the refresh path runs during a preview.
-const PAGE_TOKEN_LIFETIME_SECONDS = 120
-// --check takes the screenshot once the page is ready and the API has been quiet this long.
+// The app client asks for a new token a minute before this, so its refresh path runs during a preview.
+const TOKEN_LIFETIME_SECONDS = 120
+// --check finishes once the page is ready and the API has been quiet this long.
 const SETTLE_MS = 3000
-const VIEWPORT = { width: 1280, height: 900 }
-const MAX_SCREENSHOT_HEIGHT = 8000
-
-const session = {
-  ready: false,
-  pageLoadedAt: null,
-  pendingCalls: 0,
-  lastActivityAt: Date.now(),
-  errors: [],
-  failedCalls: [],
-}
-let tokenRejected = false
-
-function touch() {
-  session.lastActivityAt = Date.now()
-}
+// The stand-in Deepnote page reports the app's messages to --check through this DevTools binding.
+const REPORT_BINDING = '__deepnoteReport'
 
 function fail(message) {
   console.error(message)
@@ -88,7 +73,7 @@ function resolvePagePath(root, urlPath) {
   return path.join(root, path.posix.normalize(withIndex).replace(/^\/+/, ''))
 }
 
-function createAppServer(root, origins) {
+function createAppServer(root, origins, apiOrigin) {
   return http.createServer(async (req, res) => {
     res.setHeader('x-content-type-options', 'nosniff')
     res.setHeader('referrer-policy', 'no-referrer')
@@ -102,14 +87,17 @@ function createAppServer(root, origins) {
     }
     res.writeHead(200, {
       'cache-control': 'no-store',
-      'content-security-policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: ${origins.deepnote}; frame-ancestors 'self' ${origins.deepnote}`,
+      // The API origin is listed for local Deepnote setups, whose API is plain http.
+      'content-security-policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: ${apiOrigin}; frame-ancestors 'self' ${origins.deepnote}`,
       'content-type': CONTENT_TYPES[path.extname(filePath).toLowerCase()] ?? 'application/octet-stream',
     })
     res.end(req.method === 'HEAD' ? undefined : file)
   })
 }
 
-function renderDeepnotePage(appOrigin) {
+function renderDeepnotePage({ appOrigin, apiOrigin, token }) {
+  // `<` is escaped so no value can close the script element.
+  const config = JSON.stringify({ appOrigin, apiOrigin, token }).replaceAll('<', '\\u003c')
   return `<!doctype html>
 <html>
 <head>
@@ -120,15 +108,16 @@ function renderDeepnotePage(appOrigin) {
 <body>
 <iframe src="${appOrigin}/" allow="fullscreen" title="Data app"></iframe>
 <script>
-const appOrigin = ${JSON.stringify(appOrigin)}
-const report = event => fetch('/__event', { method: 'POST', body: JSON.stringify(event) })
+const { appOrigin, apiOrigin, token } = ${config}
+const report = event => window.${REPORT_BINDING}?.(JSON.stringify(event))
 document.querySelector('iframe').addEventListener('load', () => report({ type: 'page-load' }))
-window.addEventListener('message', async event => {
+window.addEventListener('message', event => {
   if (event.origin !== appOrigin || !event.data || !event.source) return
   const { type, message, line, source } = event.data
   if (type === 'deepnote-static-files-api-token-request') {
-    const auth = await fetch('/__token', { method: 'POST' }).then(response => response.json())
-    event.source.postMessage({ type: 'deepnote-static-files-api-token-response', ...auth }, appOrigin)
+    const expiresAtSeconds = Math.floor(Date.now() / 1000) + ${TOKEN_LIFETIME_SECONDS}
+    event.source.postMessage({ type: 'deepnote-static-files-api-token-response', token, apiOrigin, expiresAtSeconds }, appOrigin)
+    report({ type })
   } else if (type === 'deepnote-static-files-app-ready') {
     report({ type })
   } else if (type === 'deepnote-static-files-app-error' && typeof message === 'string') {
@@ -141,124 +130,10 @@ window.addEventListener('message', async event => {
 `
 }
 
-async function readBody(req) {
-  const chunks = []
-  for await (const chunk of req) {
-    chunks.push(chunk)
-  }
-  return Buffer.concat(chunks)
-}
-
-function reportCall(req, status, startedAt, detail) {
-  const line = `${req.method} ${req.url} ${status} (${Date.now() - startedAt} ms)${detail ? `: ${detail}` : ''}`
-  console.log(`[api] ${line}`)
-  if (status >= 400) {
-    session.failedCalls.push(line)
-  }
-}
-
-function createDeepnoteServer({ token, apiOrigin, origins }) {
-  const pageTokens = new Map()
-
-  async function proxyApiCall(req, res) {
-    res.setHeader('access-control-allow-origin', origins.app)
-    res.setHeader('vary', 'origin')
-    if (req.method === 'OPTIONS') {
-      res
-        .writeHead(204, {
-          'access-control-allow-headers': 'authorization, content-type',
-          'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-          'access-control-max-age': '86400',
-        })
-        .end()
-      return
-    }
-    const startedAt = Date.now()
-    const pageToken = req.headers.authorization?.replace(/^Bearer /, '')
-    if (!(pageTokens.get(pageToken) > Date.now())) {
-      reportCall(req, 401, startedAt, 'the page sent no token or an expired one')
-      res.writeHead(401, { 'content-type': 'application/json' }).end(JSON.stringify({ message: 'Unauthorized' }))
-      return
-    }
-    session.pendingCalls++
-    try {
-      const body = await readBody(req)
-      const response = await fetch(`${apiOrigin}${req.url}`, {
-        method: req.method,
-        headers: {
-          authorization: `Bearer ${token}`,
-          'content-type': req.headers['content-type'] ?? 'application/json',
-        },
-        body: body.length > 0 ? body : undefined,
-      })
-      const responseBody = Buffer.from(await response.arrayBuffer())
-      let detail = null
-      if (!response.ok) {
-        try {
-          detail = JSON.parse(responseBody.toString()).message?.slice(0, 300) ?? null
-        } catch {}
-      }
-      reportCall(req, response.status, startedAt, detail)
-      if (response.status === 401 && !tokenRejected) {
-        tokenRejected = true
-        console.log(
-          'The Deepnote API rejected the app token, most likely because it expired. Mint a new one with create_app_token and restart this script.'
-        )
-      }
-      res.writeHead(response.status, { 'content-type': response.headers.get('content-type') ?? 'application/json' })
-      res.end(responseBody)
-    } catch (error) {
-      const message = `Could not reach ${apiOrigin}: ${error.cause?.message ?? error.message}`
-      reportCall(req, 502, startedAt, message)
-      res.writeHead(502, { 'content-type': 'application/json' }).end(JSON.stringify({ message }))
-    } finally {
-      session.pendingCalls--
-      touch()
-    }
-  }
-
-  async function handleEvent(req) {
-    let event
-    try {
-      event = JSON.parse(await readBody(req))
-    } catch {
-      return
-    }
-    touch()
-    if (event.type === 'page-load') {
-      session.pageLoadedAt ??= Date.now()
-    } else if (event.type === 'deepnote-static-files-app-ready') {
-      session.ready = true
-      console.log('[app] ready')
-    } else if (event.type === 'deepnote-static-files-app-error') {
-      const where = [event.line != null && `line ${event.line}`, event.source].filter(Boolean).join(', ')
-      const line = `${event.message}${where ? ` (${where})` : ''}`
-      session.errors.push(line)
-      console.log(`[app] error: ${line}`)
-    }
-  }
-
-  return http.createServer(async (req, res) => {
-    const { pathname } = new URL(req.url, origins.deepnote)
-    if (pathname.startsWith('/v2/')) {
-      await proxyApiCall(req, res)
-    } else if (req.method === 'GET' && pathname === '/') {
-      res.writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' })
-      res.end(renderDeepnotePage(origins.app))
-    } else if (req.method === 'POST' && pathname === '/__token') {
-      const now = Date.now()
-      for (const [pageToken, expiresAt] of pageTokens) {
-        if (expiresAt <= now) pageTokens.delete(pageToken)
-      }
-      const pageToken = randomBytes(24).toString('hex')
-      const expiresAtSeconds = Math.floor(now / 1000) + PAGE_TOKEN_LIFETIME_SECONDS
-      pageTokens.set(pageToken, expiresAtSeconds * 1000)
-      console.log('[app] token requested')
-      res.writeHead(200, { 'content-type': 'application/json' })
-      res.end(JSON.stringify({ token: pageToken, apiOrigin: origins.deepnote, expiresAtSeconds }))
-    } else if (req.method === 'POST' && pathname === '/__event') {
-      await handleEvent(req)
-      res.writeHead(204).end()
+function createDeepnoteServer(renderPage) {
+  return http.createServer((req, res) => {
+    if (req.method === 'GET' && new URL(req.url, 'http://localhost').pathname === '/') {
+      res.writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' }).end(renderPage())
     } else {
       res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found')
     }
@@ -294,7 +169,7 @@ function findChrome() {
 }
 
 /** Starts headless Chrome and talks the DevTools protocol over its pipe, so no WebSocket client is needed. */
-function launchChrome(executable) {
+function launchChrome(executable, onEvent) {
   const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deepnote-app-dev-'))
   const chrome = spawn(
     executable,
@@ -304,8 +179,6 @@ function launchChrome(executable) {
       `--user-data-dir=${userDataDir}`,
       '--no-first-run',
       '--no-default-browser-check',
-      '--hide-scrollbars',
-      '--mute-audio',
       // Chrome refuses to start its sandbox as root, as in many containers.
       ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
       'about:blank',
@@ -330,6 +203,10 @@ function launchChrome(executable) {
     for (let end = buffer.indexOf('\0'); end !== -1; end = buffer.indexOf('\0')) {
       const message = JSON.parse(buffer.slice(0, end))
       buffer = buffer.slice(end + 1)
+      if (message.method) {
+        onEvent(message)
+        continue
+      }
       const call = pending.get(message.id)
       if (!call) continue
       pending.delete(message.id)
@@ -354,72 +231,124 @@ function launchChrome(executable) {
   }
 }
 
-async function waitForPage(timeoutMs) {
+async function waitForPage(state, timeoutMs) {
   const startedAt = Date.now()
   for (;;) {
     await new Promise(resolve => setTimeout(resolve, 200))
     const now = Date.now()
-    if (session.ready && session.pendingCalls === 0 && now - session.lastActivityAt >= SETTLE_MS) return 'settled'
-    if (!session.ready && session.pageLoadedAt && now - session.pageLoadedAt >= SETTLE_MS) return 'not-connected'
+    if (state.ready && state.apiCalls.size === 0 && now - state.lastActivityAt >= SETTLE_MS) return 'settled'
+    if (!state.ready && state.pageLoadedAt && now - state.pageLoadedAt >= SETTLE_MS) return 'not-connected'
     if (now - startedAt >= timeoutMs) return 'timeout'
   }
 }
 
-/** Grows the viewport to the page's height first, so the screenshot shows all of it. */
-async function saveScreenshot(browser, sessionId, file) {
-  try {
-    const { frameTree } = await browser.send('Page.getFrameTree', {}, sessionId)
-    const appFrame = frameTree.childFrames?.[0]?.frame
-    const { executionContextId } = await browser.send('Page.createIsolatedWorld', { frameId: appFrame.id }, sessionId)
-    const { result } = await browser.send(
-      'Runtime.evaluate',
-      { contextId: executionContextId, expression: 'document.documentElement.scrollHeight', returnByValue: true },
-      sessionId
-    )
-    const height = Math.min(Math.max(result.value, VIEWPORT.height), MAX_SCREENSHOT_HEIGHT)
-    if (height > VIEWPORT.height) {
-      await browser.send(
-        'Emulation.setDeviceMetricsOverride',
-        { ...VIEWPORT, height, deviceScaleFactor: 1, mobile: false },
-        sessionId
-      )
-      await new Promise(resolve => setTimeout(resolve, 500))
-    }
-  } catch {
-    // Keep the first screen when the page's height can't be read.
-  }
-  const { data } = await browser.send('Page.captureScreenshot', { format: 'png' }, sessionId)
-  fs.writeFileSync(file, Buffer.from(data, 'base64'))
-}
-
-async function check(deepnoteOrigin, timeoutSeconds) {
+async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
   const executable = findChrome()
   if (!executable) {
     fail(
       'No Chrome or Chromium found. Install one, or set CHROME_PATH to its executable; this script never downloads a browser.'
     )
   }
-  const browser = launchChrome(executable)
-  const screenshot = path.resolve('screenshot.png')
+  const state = {
+    ready: false,
+    pageLoadedAt: null,
+    lastActivityAt: Date.now(),
+    apiCalls: new Map(),
+    errors: [],
+    failedCalls: [],
+  }
+  let tokenRejected = false
+
+  function handleReport(event) {
+    if (event.type === 'page-load') {
+      state.pageLoadedAt ??= Date.now()
+    } else if (event.type === 'deepnote-static-files-api-token-request') {
+      console.log('[app] token requested')
+    } else if (event.type === 'deepnote-static-files-app-ready') {
+      state.ready = true
+      console.log('[app] ready')
+    } else if (event.type === 'deepnote-static-files-app-error') {
+      const where = [event.line != null && `line ${event.line}`, event.source].filter(Boolean).join(', ')
+      const line = `${event.message}${where ? ` (${where})` : ''}`
+      state.errors.push(line)
+      console.log(`[app] error: ${line}`)
+    }
+  }
+
+  async function finishApiCall(requestId, errorText) {
+    const call = state.apiCalls.get(requestId)
+    let detail = errorText
+    if (!errorText && call.status >= 400) {
+      detail = await browser
+        .send('Network.getResponseBody', { requestId }, call.sessionId)
+        .then(({ body }) => JSON.parse(body).message?.slice(0, 300))
+        .catch(() => null)
+    }
+    const line = `${call.label} ${errorText ? 'failed' : call.status} (${Date.now() - call.startedAt} ms)${detail ? `: ${detail}` : ''}`
+    console.log(`[api] ${line}`)
+    if (errorText || call.status >= 400) {
+      state.failedCalls.push(line)
+    }
+    if (call.status === 401 && !tokenRejected) {
+      tokenRejected = true
+      console.log(
+        'The Deepnote API rejected the app token, most likely because it expired. Mint a new one with create_app_token and rerun.'
+      )
+    }
+    state.apiCalls.delete(requestId)
+    state.lastActivityAt = Date.now()
+  }
+
+  // Events come from the stand-in page's session and, when Chrome runs the app in a process of its own, the app's.
+  function handleEvent({ method, params = {}, sessionId }) {
+    state.lastActivityAt = Date.now()
+    const call = state.apiCalls.get(params.requestId)
+    if (method === 'Runtime.bindingCalled' && params.name === REPORT_BINDING) {
+      handleReport(JSON.parse(params.payload))
+    } else if (method === 'Target.attachedToTarget') {
+      browser
+        .send('Network.enable', {}, params.sessionId)
+        .catch(() => {})
+        .then(() => browser.send('Runtime.runIfWaitingForDebugger', {}, params.sessionId))
+        .catch(() => {})
+    } else if (
+      method === 'Network.requestWillBeSent' &&
+      params.request.url.startsWith(`${apiOrigin}/v2/`) &&
+      params.request.method !== 'OPTIONS'
+    ) {
+      const label = `${params.request.method} ${params.request.url.slice(apiOrigin.length)}`
+      state.apiCalls.set(params.requestId, { label, sessionId, startedAt: Date.now() })
+    } else if (method === 'Network.responseReceived' && call) {
+      call.status = params.response.status
+    } else if (method === 'Network.loadingFinished' && call) {
+      finishApiCall(params.requestId)
+    } else if (method === 'Network.loadingFailed' && call) {
+      finishApiCall(params.requestId, params.corsErrorStatus?.corsError ?? params.errorText)
+    }
+  }
+
+  const browser = launchChrome(executable, handleEvent)
   let outcome
   try {
     const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' })
     const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true })
+    await browser.send('Runtime.enable', {}, sessionId)
+    await browser.send('Runtime.addBinding', { name: REPORT_BINDING }, sessionId)
+    await browser.send('Network.enable', {}, sessionId)
     await browser.send(
-      'Emulation.setDeviceMetricsOverride',
-      { ...VIEWPORT, deviceScaleFactor: 1, mobile: false },
+      'Target.setAutoAttach',
+      { autoAttach: true, waitForDebuggerOnStart: true, flatten: true },
       sessionId
     )
     await browser.send('Page.navigate', { url: `${deepnoteOrigin}/` }, sessionId)
-    outcome = await waitForPage(timeoutSeconds * 1000)
-    await saveScreenshot(browser, sessionId, screenshot)
+    outcome = await waitForPage(state, timeoutSeconds * 1000)
   } finally {
     await browser.close()
   }
 
   const problems = [
-    ...session.errors.map(error => `App error: ${error}`),
-    ...session.failedCalls.map(call => `Failed API call: ${call}`),
+    ...state.errors.map(error => `App error: ${error}`),
+    ...state.failedCalls.map(call => `Failed API call: ${call}`),
   ]
   if (outcome === 'not-connected') {
     problems.push(
@@ -427,12 +356,11 @@ async function check(deepnoteOrigin, timeoutSeconds) {
     )
   } else if (outcome === 'timeout') {
     problems.push(
-      session.ready
+      state.ready
         ? `The page was still calling the API after ${timeoutSeconds} s. Pass a longer --timeout if that is expected.`
         : `The page did not load within ${timeoutSeconds} s.`
     )
   }
-  console.log(`\nScreenshot: ${screenshot}`)
   if (problems.length === 0) {
     console.log('Check passed.')
     process.exit(0)
@@ -483,8 +411,10 @@ async function main() {
   }
 
   const origins = {}
-  const deepnoteServer = createDeepnoteServer({ token: values.token, apiOrigin, origins })
-  const appServer = createAppServer(root, origins)
+  const deepnoteServer = createDeepnoteServer(() =>
+    renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token })
+  )
+  const appServer = createAppServer(root, origins, apiOrigin)
   try {
     origins.deepnote = await listen(deepnoteServer, port)
     origins.app = await listen(appServer, port === 0 ? 0 : port + 1)
@@ -492,12 +422,14 @@ async function main() {
     fail(error.message)
   }
 
-  console.log(`Serving ${root} as the app at ${origins.app}, proxying /v2 calls to ${apiOrigin}.`)
+  console.log(`Serving ${root} as the app at ${origins.app}, against the API at ${apiOrigin}.`)
   if (values.check) {
-    await check(origins.deepnote, timeoutSeconds)
+    await check({ deepnoteOrigin: origins.deepnote, apiOrigin, timeoutSeconds })
   } else {
     console.log(`Preview: ${origins.deepnote}/`)
-    console.log('Pages are read from disk on every load, so reload after editing. Press Ctrl+C to stop.')
+    console.log(
+      "Pages are read from disk on every load, so reload after editing; the browser's developer tools show errors and API calls. Press Ctrl+C to stop."
+    )
   }
 }
 
