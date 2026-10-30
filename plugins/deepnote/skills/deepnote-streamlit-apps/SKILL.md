@@ -18,7 +18,7 @@ A Streamlit app project has two parts: the app, Python code in `app.py` hosted o
 ## Writing The App
 
 - Replace `app.py` with `write_file` and `overwrite: true`, sending the whole file. The app reloads when its code changes.
-- MCP cannot read a file's content. To change an app you did not write in this conversation, print it from a scratch code block with `print(open('/work/app.py').read())` first.
+- Read the current `app.py` with `read_file` before changing it, unless you wrote it in this conversation.
 - Use the notebook to explore data and test queries before moving them into the app. The app runs separately and can't see the notebook's variables, so it loads its own data.
 - To query an integration attached to the project, call `deepnote_toolkit.set_integration_env()` at the top of the app, then `deepnote_toolkit.execute_sql(query, 'SQL_<INTEGRATION_ID>')` with the integration ID uppercased and dashes replaced by underscores. For OAuth integrations, use `get_snowflake_connection(integration_id)` or `get_bigquery_client(integration_id)` from `deepnote_toolkit.streamlit_data_apps`, so each viewer sees data with their own access.
 - Every interaction reruns the whole script, so cache data loading. `@st.cache_data(ttl=...)` is shared by all viewers, so use it only for data that is the same for everyone; keep data from OAuth integrations in `st.session_state`.

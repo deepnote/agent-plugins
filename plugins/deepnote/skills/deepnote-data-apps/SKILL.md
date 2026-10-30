@@ -32,7 +32,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## The Page
 
-- Write the whole page with `write_file` at `_deepnote_static/index.html` and `overwrite: true`. MCP cannot read a file's content, so to change a page you did not write in this conversation, print it from a scratch code block with `print(open('/work/_deepnote_static/index.html').read())` first.
+- Read the current page with `read_file` before changing it, unless you wrote it in this conversation, and write the whole page with `write_file` at `_deepnote_static/index.html` and `overwrite: true`.
 - Start its `<head>` with `<script src="https://deepnote.com/static/app-client/v1.js"></script>`, before any other script, and load CDN scripts with `crossorigin="anonymous"`. The script exposes `Deepnote.connect()`, not React components or `DeepnoteApp`.
 - Connect with `const notebook = Deepnote.connect().notebook('<notebook ID>')`, using the notebook ID from `get_project`.
   - On load, render `const {appData, agentBlockSummary} = await notebook.appData()`. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.

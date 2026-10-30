@@ -1,6 +1,6 @@
 ---
 name: deepnote-workspace
-description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and writing, copying, or deleting project files."
+description: "Use for Deepnote workspace and project operations: summaries, project and folder inventories, project inspection, integrations and their usage, cached table structure, and reading, writing, copying, or deleting project files."
 ---
 
 # Deepnote Workspace
@@ -76,9 +76,10 @@ Standalone integration table, only when explicitly requested:
 | --- | --- | --- |
 | `Integration name` | `type` | `Project / Notebook` from usage tools, `None found`, or `Usage not checked` |
 
-## Project File Writes And Deletes
+## Project File Reads, Writes, And Deletes
 
-1. Use `write_file` only for small text-based files, such as a script, config, or CSV, never to upload large files or big binary blobs. Check the project's file inventory with `get_project` first.
-2. Pass `overwrite: true` only when the user asked to replace an existing file. Without it, a taken path gets a generated unique path, so report the returned `file.path`.
-3. Use `delete_file` only for a file the user named, after confirming its path with `get_project`. It cannot be undone, and it deletes a Streamlit app that serves the file, so check `list_streamlit_apps` first.
-4. Both require edit access to the project.
+1. Use `read_file` only for small text-based files, never for large or binary files. Pass `startLine` and `endLine` to read a long file in parts while `hasMore` is true.
+2. Use `write_file` only for small text-based files, such as a script, config, or CSV, never to upload large files or big binary blobs. Check the project's file inventory with `get_project` first.
+3. Pass `overwrite: true` only when the user asked to replace an existing file. Without it, a taken path gets a generated unique path, so report the returned `file.path`.
+4. Use `delete_file` only for a file the user named, after confirming its path with `get_project`. It cannot be undone, and it deletes a Streamlit app that serves the file, so check `list_streamlit_apps` first.
+5. Writing and deleting require edit access to the project; reading needs View access.
