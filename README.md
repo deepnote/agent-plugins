@@ -51,6 +51,8 @@ Through the hosted MCP server the agent can:
 - Read Deepnote docs
 - Build data apps and Streamlit apps, each in a project of its own
 
+In Claude Code and Codex the agent can also preview a data app's page locally against its real data and check it for errors before pushing it. That needs Node 18 or later, and the headless check needs an installed Chrome, Chromium, or Edge.
+
 ## Good first prompts
 
 - `Which Deepnote workspace am I connected to?`
@@ -128,7 +130,7 @@ Things to know:
 - Sign-in says the workspace cannot use the MCP connector, or that MCP access is disabled: a workspace admin needs to enable MCP access for that workspace.
 - A project, notebook, or integration is missing: the signed-in user, or the API key's creator, needs access to it.
 - Creating or editing fails with `Insufficient permissions`: use an editor or admin key, or a user with edit access to the project.
-- `update_project` fails with `Insufficient permissions`: changing a project's static-site access, Streamlit app API access, or environment needs full access to the project, not just edit access.
+- `update_project` fails with `Insufficient permissions`: publishing a data app or changing a project's Streamlit app API access or environment needs full access to the project, not just edit access.
 - Attaching or detaching an integration returns a conflict: inspect the project because the integration is already in the requested state.
 - `copy_file` reports `File already exists`: the target project already has the same path; the tool never overwrites.
 - `write_file` wrote to a different path than requested: the path was taken, so a unique path was generated. Ask the agent to overwrite the file if you meant to replace it.
