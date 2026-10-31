@@ -11,7 +11,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## Creating An App
 
-1. Create the project with `create_project` and `projectType: "data_app"`. It starts with its notebook and a placeholder page, with sharing and viewer API access already on; do not change them.
+1. Create the project with `create_project` and `projectType: "data_app"`. It starts with its notebook and a placeholder page, with sharing and viewer API access already on; do not change them. Never add a page to a project of another type or publish one with `publish_static_site` or the Deepnote CLI's `deepnote publish`; those are the legacy static sites.
 2. Look for data in the project's integrations and files first, then build a small, polished first version. If nothing fits, use clearly labeled sample data and offer to connect real data, unless the user named specific data: then ask where it is.
 
 ## The Notebook
