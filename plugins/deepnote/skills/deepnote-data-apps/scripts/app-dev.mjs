@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Previews a data app page locally, embedded the way Deepnote embeds it, against the real Deepnote API.
 //
-// Two loopback origins stand in for Deepnote: one serves index.html with Deepnote's headers, the other serves a
+// Two loopback origins stand in for Deepnote: one serves the page folder with Deepnote's rules, the other serves a
 // stand-in Deepnote page that embeds it and answers the app client's token requests. The page calls the API itself,
 // as it does in Deepnote. --check loads it in an installed Chrome and reads the app's messages and API calls over
 // the DevTools protocol. Built-in modules only.
@@ -25,6 +25,22 @@ const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> 
 
 Set CHROME_PATH to use a browser that is not found automatically.`
 
+const CONTENT_TYPES = {
+  '.css': 'text/css; charset=utf-8',
+  '.csv': 'text/csv; charset=utf-8',
+  '.gif': 'image/gif',
+  '.html': 'text/html; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.jpeg': 'image/jpeg',
+  '.jpg': 'image/jpeg',
+  '.js': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
+}
 // The app client asks for a new token a minute before this, so its refresh path runs during a preview.
 const TOKEN_LIFETIME_SECONDS = 120
 // --check finishes once the page is ready and the API has been quiet this long.
@@ -38,11 +54,20 @@ function fail(message) {
   process.exit(1)
 }
 
-/** Serves index.html at `/` and `/index.html`, the only file the skill pushes, with Deepnote's headers. */
+/**
+ * Serves the folder the way Deepnote serves `_deepnote_static/`: paths ending in `/` get their index.html, other
+ * paths need the exact file name, and nosniff makes the content type matter.
+ */
 function createAppServer(root, origins, apiOrigin) {
   return http.createServer(async (req, res) => {
-    const { pathname } = new URL(req.url, origins.app)
-    if (pathname !== '/' && pathname !== '/index.html') {
+    let filePath
+    let file
+    try {
+      const { pathname } = new URL(req.url, origins.app)
+      filePath = path.join(root, decodeURIComponent(pathname), pathname.endsWith('/') ? 'index.html' : '')
+      if (filePath.startsWith(root + path.sep)) file = await fs.promises.readFile(filePath)
+    } catch {}
+    if (!file) {
       console.log(`[page] 404 ${req.url}`)
       res.writeHead(404).end()
       return
@@ -51,11 +76,11 @@ function createAppServer(root, origins, apiOrigin) {
       'cache-control': 'no-store',
       // The API origin is listed for local Deepnote setups, whose API is plain http.
       'content-security-policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: ${apiOrigin}; frame-ancestors 'self' ${origins.deepnote}`,
-      'content-type': 'text/html; charset=utf-8',
+      'content-type': CONTENT_TYPES[path.extname(filePath).toLowerCase()] ?? 'application/octet-stream',
       'referrer-policy': 'no-referrer',
       'x-content-type-options': 'nosniff',
     })
-    res.end(await fs.promises.readFile(path.join(root, 'index.html')))
+    res.end(file)
   })
 }
 
@@ -368,7 +393,7 @@ async function main() {
   } else {
     console.log(`Preview: ${origins.deepnote}/`)
     console.log(
-      "The page is read from disk on every load, so reload after editing; the browser's developer tools show errors and API calls. Press Ctrl+C to stop."
+      "Files are read from disk on every load, so reload after editing; the browser's developer tools show errors and API calls. Press Ctrl+C to stop."
     )
   }
 }
