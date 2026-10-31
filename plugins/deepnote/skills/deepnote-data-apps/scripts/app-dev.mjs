@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Previews a data app page locally, embedded the way Deepnote embeds it, against the real Deepnote API.
 //
-// Two loopback origins stand in for Deepnote: one serves the page folder with Deepnote's rules, the other serves a
+// Two loopback origins stand in for Deepnote: one serves index.html with Deepnote's headers, the other serves a
 // stand-in Deepnote page that embeds it and answers the app client's token requests. The page calls the API itself,
 // as it does in Deepnote. --check loads it in an installed Chrome and reads the app's messages and API calls over
 // the DevTools protocol. Built-in modules only.
@@ -22,34 +22,14 @@ const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> 
                  preview to open in a browser until stopped.
   --port         Port of the preview page; the app is served on the next one. Default 4747, or free ports
                  with --check.
-  --timeout      Seconds --check waits for the page to settle. Default 60.
 
 Set CHROME_PATH to use a browser that is not found automatically.`
 
-const CONTENT_TYPES = {
-  '.css': 'text/css; charset=utf-8',
-  '.csv': 'text/csv; charset=utf-8',
-  '.gif': 'image/gif',
-  '.htm': 'text/html; charset=utf-8',
-  '.html': 'text/html; charset=utf-8',
-  '.ico': 'image/x-icon',
-  '.jpeg': 'image/jpeg',
-  '.jpg': 'image/jpeg',
-  '.js': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.png': 'image/png',
-  '.svg': 'image/svg+xml',
-  '.txt': 'text/plain; charset=utf-8',
-  '.wasm': 'application/wasm',
-  '.webp': 'image/webp',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-}
 // The app client asks for a new token a minute before this, so its refresh path runs during a preview.
 const TOKEN_LIFETIME_SECONDS = 120
 // --check finishes once the page is ready and the API has been quiet this long.
 const SETTLE_MS = 3000
+const TIMEOUT_SECONDS = 60
 // The stand-in Deepnote page reports the app's messages to --check through this DevTools binding.
 const REPORT_BINDING = '__deepnoteReport'
 
@@ -58,46 +38,28 @@ function fail(message) {
   process.exit(1)
 }
 
-/** Deepnote's rules: `/` and paths ending in `/` serve their index.html, other paths need the exact file name. */
-function resolvePagePath(root, urlPath) {
-  let decodedPath
-  try {
-    decodedPath = decodeURIComponent(urlPath)
-  } catch {
-    return null
-  }
-  if (decodedPath.split(/[\\/]/).includes('..') || decodedPath.includes('\0')) {
-    return null
-  }
-  const withIndex = decodedPath.endsWith('/') ? `${decodedPath}index.html` : decodedPath
-  return path.join(root, path.posix.normalize(withIndex).replace(/^\/+/, ''))
-}
-
+/** Serves index.html at `/` and `/index.html`, the only file the skill pushes, with Deepnote's headers. */
 function createAppServer(root, origins, apiOrigin) {
   return http.createServer(async (req, res) => {
-    res.setHeader('x-content-type-options', 'nosniff')
-    res.setHeader('referrer-policy', 'no-referrer')
-    const filePath =
-      (req.method === 'GET' || req.method === 'HEAD') && resolvePagePath(root, new URL(req.url, origins.app).pathname)
-    const file = filePath ? await fs.promises.readFile(filePath).catch(() => null) : null
-    if (!file) {
-      console.log(`[page] 404 ${req.method} ${req.url}`)
-      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found')
+    const { pathname } = new URL(req.url, origins.app)
+    if (pathname !== '/' && pathname !== '/index.html') {
+      console.log(`[page] 404 ${req.url}`)
+      res.writeHead(404).end()
       return
     }
     res.writeHead(200, {
       'cache-control': 'no-store',
       // The API origin is listed for local Deepnote setups, whose API is plain http.
       'content-security-policy': `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: ${apiOrigin}; frame-ancestors 'self' ${origins.deepnote}`,
-      'content-type': CONTENT_TYPES[path.extname(filePath).toLowerCase()] ?? 'application/octet-stream',
+      'content-type': 'text/html; charset=utf-8',
+      'referrer-policy': 'no-referrer',
+      'x-content-type-options': 'nosniff',
     })
-    res.end(req.method === 'HEAD' ? undefined : file)
+    res.end(await fs.promises.readFile(path.join(root, 'index.html')))
   })
 }
 
 function renderDeepnotePage({ appOrigin, apiOrigin, token }) {
-  // `<` is escaped so no value can close the script element.
-  const config = JSON.stringify({ appOrigin, apiOrigin, token }).replaceAll('<', '\\u003c')
   return `<!doctype html>
 <html>
 <head>
@@ -108,21 +70,17 @@ function renderDeepnotePage({ appOrigin, apiOrigin, token }) {
 <body>
 <iframe src="${appOrigin}/" allow="fullscreen" title="Data app"></iframe>
 <script>
-const { appOrigin, apiOrigin, token } = ${config}
+const { appOrigin, apiOrigin, token } = ${JSON.stringify({ appOrigin, apiOrigin, token })}
 const report = event => window.${REPORT_BINDING}?.(JSON.stringify(event))
 document.querySelector('iframe').addEventListener('load', () => report({ type: 'page-load' }))
 window.addEventListener('message', event => {
-  if (event.origin !== appOrigin || !event.data || !event.source) return
-  const { type, message, line, source } = event.data
+  if (event.origin !== appOrigin) return
+  const { type, message, line, source } = event.data ?? {}
   if (type === 'deepnote-static-files-api-token-request') {
     const expiresAtSeconds = Math.floor(Date.now() / 1000) + ${TOKEN_LIFETIME_SECONDS}
     event.source.postMessage({ type: 'deepnote-static-files-api-token-response', token, apiOrigin, expiresAtSeconds }, appOrigin)
-    report({ type })
-  } else if (type === 'deepnote-static-files-app-ready') {
-    report({ type })
-  } else if (type === 'deepnote-static-files-app-error' && typeof message === 'string') {
-    report({ type, message: message.slice(0, 500), line: typeof line === 'number' ? line : null, source: typeof source === 'string' ? source : null })
   }
+  report({ type, message, line, source })
 })
 </script>
 </body>
@@ -130,21 +88,9 @@ window.addEventListener('message', event => {
 `
 }
 
-function createDeepnoteServer(renderPage) {
-  return http.createServer((req, res) => {
-    if (req.method === 'GET' && new URL(req.url, 'http://localhost').pathname === '/') {
-      res.writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' }).end(renderPage())
-    } else {
-      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found')
-    }
-  })
-}
-
 function listen(server, port) {
   return new Promise((resolve, reject) => {
-    server.once('error', error =>
-      reject(error.code === 'EADDRINUSE' ? new Error(`Port ${port} is in use. Pass another --port.`) : error)
-    )
+    server.once('error', reject)
     server.listen(port, '127.0.0.1', () => resolve(`http://127.0.0.1:${server.address().port}`))
   })
 }
@@ -242,18 +188,18 @@ function launchChrome(executable, onEvent) {
   }
 }
 
-async function waitForPage(state, timeoutMs) {
+async function waitForPage(state) {
   const startedAt = Date.now()
   for (;;) {
     await new Promise(resolve => setTimeout(resolve, 200))
     const now = Date.now()
     if (state.ready && state.apiCalls.size === 0 && now - state.lastActivityAt >= SETTLE_MS) return 'settled'
     if (!state.ready && state.pageLoadedAt && now - state.pageLoadedAt >= SETTLE_MS) return 'not-connected'
-    if (now - startedAt >= timeoutMs) return 'timeout'
+    if (now - startedAt >= TIMEOUT_SECONDS * 1000) return 'timeout'
   }
 }
 
-async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
+async function check({ deepnoteOrigin, apiOrigin }) {
   const executable = findBrowser()
   if (!executable) {
     fail(
@@ -267,8 +213,8 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
     apiCalls: new Map(),
     errors: [],
     failedCalls: [],
+    tokenRejected: false,
   }
-  let tokenRejected = false
 
   function handleReport(event) {
     if (event.type === 'page-load') {
@@ -292,7 +238,7 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
     if (!errorText && call.status >= 400) {
       detail = await browser
         .send('Network.getResponseBody', { requestId }, call.sessionId)
-        .then(({ body }) => JSON.parse(body).message?.slice(0, 300))
+        .then(({ body }) => JSON.parse(body).message)
         .catch(() => null)
     }
     const line = `${call.label} ${errorText ? 'failed' : call.status} (${Date.now() - call.startedAt} ms)${detail ? `: ${detail}` : ''}`
@@ -300,11 +246,8 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
     if (errorText || call.status >= 400) {
       state.failedCalls.push(line)
     }
-    if (call.status === 401 && !tokenRejected) {
-      tokenRejected = true
-      console.log(
-        'The Deepnote API rejected the data app token, most likely because it expired. Mint a new one with create_data_app_token and rerun.'
-      )
+    if (call.status === 401) {
+      state.tokenRejected = true
     }
     state.apiCalls.delete(requestId)
     state.lastActivityAt = Date.now()
@@ -352,7 +295,7 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
       sessionId
     )
     await browser.send('Page.navigate', { url: `${deepnoteOrigin}/` }, sessionId)
-    outcome = await waitForPage(state, timeoutSeconds * 1000)
+    outcome = await waitForPage(state)
   } finally {
     await browser.close()
   }
@@ -361,6 +304,11 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
     ...state.errors.map(error => `App error: ${error}`),
     ...state.failedCalls.map(call => `Failed API call: ${call}`),
   ]
+  if (state.tokenRejected) {
+    problems.push(
+      'The Deepnote API rejected the data app token, most likely because it expired. Mint a new one with create_data_app_token and rerun.'
+    )
+  }
   if (outcome === 'not-connected') {
     problems.push(
       'The page loaded but never connected to Deepnote. Load https://deepnote.com/static/app-client/v1.js first in its <head>.'
@@ -368,8 +316,8 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
   } else if (outcome === 'timeout') {
     problems.push(
       state.ready
-        ? `The page was still calling the API after ${timeoutSeconds} s. Pass a longer --timeout if that is expected.`
-        : `The page did not load within ${timeoutSeconds} s.`
+        ? `The page was still calling the API after ${TIMEOUT_SECONDS} s.`
+        : `The page did not load within ${TIMEOUT_SECONDS} s.`
     )
   }
   if (problems.length === 0) {
@@ -381,23 +329,16 @@ async function check({ deepnoteOrigin, apiOrigin, timeoutSeconds }) {
 }
 
 async function main() {
-  let args
-  try {
-    args = parseArgs({
-      allowPositionals: true,
-      options: {
-        token: { type: 'string' },
-        'api-origin': { type: 'string' },
-        check: { type: 'boolean', default: false },
-        port: { type: 'string' },
-        timeout: { type: 'string', default: '60' },
-        help: { type: 'boolean', default: false },
-      },
-    })
-  } catch (error) {
-    fail(`${error.message}\n\n${USAGE}`)
-  }
-  const { values, positionals } = args
+  const { values, positionals } = parseArgs({
+    allowPositionals: true,
+    options: {
+      token: { type: 'string' },
+      'api-origin': { type: 'string' },
+      check: { type: 'boolean', default: false },
+      port: { type: 'string' },
+      help: { type: 'boolean', default: false },
+    },
+  })
   if (values.help) {
     console.log(USAGE)
     return
@@ -409,37 +350,25 @@ async function main() {
   if (!fs.existsSync(path.join(root, 'index.html'))) {
     fail(`No index.html in ${root}.`)
   }
-  let apiOrigin
-  try {
-    apiOrigin = new URL(values['api-origin']).origin
-  } catch {
-    fail(`--api-origin is not a URL: ${values['api-origin']}`)
-  }
+  const apiOrigin = new URL(values['api-origin']).origin
   const port = Number(values.port ?? (values.check ? 0 : 4747))
-  const timeoutSeconds = Number(values.timeout)
-  if (!Number.isInteger(port) || port < 0 || port > 65534 || !(timeoutSeconds > 0)) {
-    fail(USAGE)
-  }
 
   const origins = {}
-  const deepnoteServer = createDeepnoteServer(() =>
-    renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token })
+  const deepnoteServer = http.createServer((req, res) =>
+    res
+      .writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' })
+      .end(renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token }))
   )
-  const appServer = createAppServer(root, origins, apiOrigin)
-  try {
-    origins.deepnote = await listen(deepnoteServer, port)
-    origins.app = await listen(appServer, port === 0 ? 0 : port + 1)
-  } catch (error) {
-    fail(error.message)
-  }
+  origins.deepnote = await listen(deepnoteServer, port)
+  origins.app = await listen(createAppServer(root, origins, apiOrigin), port === 0 ? 0 : port + 1)
 
   console.log(`Serving ${root} as the app at ${origins.app}, against the API at ${apiOrigin}.`)
   if (values.check) {
-    await check({ deepnoteOrigin: origins.deepnote, apiOrigin, timeoutSeconds })
+    await check({ deepnoteOrigin: origins.deepnote, apiOrigin })
   } else {
     console.log(`Preview: ${origins.deepnote}/`)
     console.log(
-      "Pages are read from disk on every load, so reload after editing; the browser's developer tools show errors and API calls. Press Ctrl+C to stop."
+      "The page is read from disk on every load, so reload after editing; the browser's developer tools show errors and API calls. Press Ctrl+C to stop."
     )
   }
 }
