@@ -198,6 +198,7 @@ function launchChrome(executable, onEvent) {
   })
 
   return {
+    exited,
     send(method, params, sessionId) {
       return new Promise((resolve, reject) => {
         const id = ++nextId
@@ -218,7 +219,10 @@ async function waitForPage(state) {
   for (;;) {
     await new Promise(resolve => setTimeout(resolve, 200))
     const now = Date.now()
-    if (state.ready && state.apiCalls.size === 0 && now - state.lastActivityAt >= SETTLE_MS) return 'settled'
+    // The iframe's load event waits for every script, stylesheet, and image, so a late one can still fail the check.
+    if (state.ready && state.pageLoadedAt && state.apiCalls.size === 0 && now - state.lastActivityAt >= SETTLE_MS) {
+      return 'settled'
+    }
     if (!state.ready && state.pageLoadedAt && now - state.pageLoadedAt >= SETTLE_MS) return 'not-connected'
     if (now - startedAt >= TIMEOUT_SECONDS * 1000) return 'timeout'
   }
@@ -320,7 +324,7 @@ async function check({ deepnoteOrigin, apiOrigin }) {
       sessionId
     )
     await browser.send('Page.navigate', { url: `${deepnoteOrigin}/` }, sessionId)
-    outcome = await waitForPage(state)
+    outcome = await Promise.race([waitForPage(state), browser.exited.then(() => 'browser-exited')])
   } finally {
     await browser.close()
   }
@@ -338,9 +342,11 @@ async function check({ deepnoteOrigin, apiOrigin }) {
     problems.push(
       'The page loaded but never connected to Deepnote. Load https://deepnote.com/static/app-client/v1.js first in its <head>.'
     )
+  } else if (outcome === 'browser-exited') {
+    problems.push('The browser exited before the check finished.')
   } else if (outcome === 'timeout') {
     problems.push(
-      state.ready
+      state.ready && state.pageLoadedAt
         ? `The page was still calling the API after ${TIMEOUT_SECONDS} s.`
         : `The page did not load within ${TIMEOUT_SECONDS} s.`
     )
