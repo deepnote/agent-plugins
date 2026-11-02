@@ -46,7 +46,7 @@ Row rules:
 
 ## Project And Folder Inspection
 
-Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, static-site settings, and environment. Use `get_machine` for whether its machine is running and how big it is. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and the current sharing state.
+Use `get_project` for a specific project's type, containing folder, notebooks, attached integration summaries, recursive file inventory, data app settings, and environment. Use `get_machine` for whether its machine is running and how big it is. Use `get_notebook` only when block or input detail is needed. Report the relevant notebooks and integrations, a file count unless individual paths were requested, and whether a data app is published.
 
 To put a project on another image, resolve the environment with `list_environments` and pass its `id` as `environmentId` to `create_project` or `update_project`. Switching the environment of an existing project restarts its running machine, which clears kernel state.
 
