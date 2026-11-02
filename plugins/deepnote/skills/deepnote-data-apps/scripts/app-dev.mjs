@@ -10,12 +10,10 @@ import http from 'node:http'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 
-const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin>
-         --expires-at <expiresAtSeconds> [--port <port>]
+const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> [--port <port>]
 
   --token        Viewer token from the create_data_app_token MCP tool. It is never printed.
   --api-origin   apiOrigin from the same create_data_app_token result.
-  --expires-at   expiresAtSeconds from the same result. The preview stops then, since the API rejects the token after.
   --port         Port of the preview page; the app is served on the next one. Default 4747.`
 
 // The common web types from the table Deepnote's server looks content types up in.
@@ -172,7 +170,6 @@ async function main() {
     options: {
       token: { type: 'string' },
       'api-origin': { type: 'string' },
-      'expires-at': { type: 'string' },
       port: { type: 'string', default: '4747' },
       help: { type: 'boolean', default: false },
     },
@@ -181,12 +178,8 @@ async function main() {
     console.log(USAGE)
     return
   }
-  if (positionals.length !== 1 || !values.token || !values['api-origin'] || !values['expires-at']) {
+  if (positionals.length !== 1 || !values.token || !values['api-origin']) {
     fail(USAGE)
-  }
-  const expiresAtMs = Number(values['expires-at']) * 1000
-  if (!(expiresAtMs > Date.now())) {
-    fail('The token has expired. Mint a new one with create_data_app_token.')
   }
   const root = path.resolve(positionals[0])
   if (!fs.existsSync(path.join(root, 'index.html'))) {
@@ -207,12 +200,8 @@ async function main() {
   console.log(`Serving ${root} as the app at ${origins.app}, against the API at ${apiOrigin}.`)
   console.log(`Preview: ${origins.deepnote}/`)
   console.log(
-    `Files are read from disk on every load, so reload after editing. The bar above the page shows whether the app connected to Deepnote and lists its errors. The preview stops at ${new Date(expiresAtMs).toLocaleTimeString()}, when the token expires; press Ctrl+C to stop it sooner.`
+    'Files are read from disk on every load, so reload after editing. The bar above the page shows whether the app connected to Deepnote and lists its errors. Press Ctrl+C to stop.'
   )
-  setTimeout(() => {
-    console.log('The token expired, so the preview stopped. Mint a new token and start it again to keep previewing.')
-    process.exit(0)
-  }, expiresAtMs - Date.now())
 }
 
 await main().catch(error => fail(error.message))
