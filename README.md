@@ -51,7 +51,7 @@ Through the hosted MCP server the agent can:
 - Read Deepnote docs
 - Build data apps and Streamlit apps, each in a project of its own
 
-In Claude Code and Codex the agent can also preview a data app's page locally against its real data and check it for errors before pushing it. That needs Node 18 or later, and the headless check needs an installed Chrome, Chromium, or Edge.
+In Claude Code and Codex the agent can also preview a data app's page locally against its real data before pushing it, in its own browser or yours. That needs Node 18 or later.
 
 ## Good first prompts
 

@@ -33,7 +33,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 ## The Page
 
 - `index.html` can load other files from `_deepnote_static/` by relative path, such as `styles.css`, `app.js`, or `logo.svg`. Keep the app client script and the Tailwind setup below in `index.html`, and move the rest into files of their own when that keeps the page easier to change.
-- Keep a local copy of `_deepnote_static/` in a folder of its own. Read each file the page loads or you will change with `read_file` once, unless you wrote it in this conversation; `get_project` lists them. Images that `read_file` cannot read show as broken in the local preview without failing the check. Edit the files there, and once the local check in Testing passes, push each new or changed file with `write_file` at its path under `_deepnote_static/` and `overwrite: true`. Where you cannot run local commands, write the files with `write_file` directly.
+- Keep a local copy of `_deepnote_static/` in a folder of its own. Read each file the page loads or you will change with `read_file` once, unless you wrote it in this conversation; `get_project` lists them. Images that `read_file` cannot read show as broken in the local preview without failing the check. Edit the files there, and once the page works in the local preview in Testing, push each new or changed file with `write_file` at its path under `_deepnote_static/` and `overwrite: true`. Where you cannot run local commands, write the files with `write_file` directly.
 - Start the `<head>` of `index.html` with `<script src="https://deepnote.com/static/app-client/v1.js"></script>`, before any other script, and load CDN scripts with `crossorigin="anonymous"`. The script exposes `Deepnote.connect()`, not React components or `DeepnoteApp`.
 - Style the page with Tailwind CSS 4.3.3. After the app client script, add the Tailwind browser build, Inter, and the default theme below, then use its colors in classes (`bg-surface`, `text-muted`, `border-border`, `bg-accent`, `text-positive`, ...). Its dark values apply on their own, so don't add `dark:` variants for theme colors. Chart code reads series colors with `getComputedStyle(document.documentElement).getPropertyValue('--color-chart-1')`.
 
@@ -78,12 +78,13 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Delete scratch blocks when done.
 
-Check the page locally before pushing it, against the same API and data it gets in Deepnote:
+Preview the page locally before pushing it, against the same API and data it gets in Deepnote:
 
 1. Mint a viewer token with `create_data_app_token` for the project. Pass it only on the command line; never write it into files or answers.
-2. Run `node scripts/app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> --check`, with the script from this skill's directory. It needs Node 18 or later and an installed Chrome, Chromium, or Edge. It embeds the page the way Deepnote does, prints the page's errors and API calls, and exits non-zero on an app error, a failed API call, or a timeout. Fix the page and rerun until it passes. The token is short-lived: when the script says the API rejected it, mint a new one and rerun.
-3. Look at the page. With a browser tool, run the script without `--check` in the background, open the preview URL it prints, and try the inputs; runs started there are real runs. Without one, say that only the check's output was reviewed. Give the user the preview URL when they want to try the page before you push it.
-4. Push the new and changed files.
+2. Run `node scripts/app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin>` in the background, with the script from this skill's directory. It needs Node 18 or later. It serves the page embedded the way Deepnote does, prints the preview URL, and logs files the page asks for that do not exist.
+3. With a browser tool, open the preview URL. The bar above the page says whether the app connected to Deepnote and lists its errors. Look at the page and try the inputs; runs started there are real runs. Fix the files and reload until the bar shows no errors. The token expires after about 15 minutes: when API calls start failing, mint a new one and restart the script.
+4. Without a browser tool, give the user the preview URL, ask them to open it, and say that you did not check the page yourself.
+5. Push the new and changed files.
 
 A client that cannot run local commands, such as ChatGPT or claude.ai, cannot load the page: say the page itself was not checked and ask the user to open it. Do not install browser tools in the notebook to check it.
 
