@@ -33,7 +33,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 ## The Page
 
 - `index.html` can load other files from `_deepnote_static/` by relative path, such as `styles.css`, `app.js`, or `logo.svg`. Keep the app client script and the Tailwind setup below in `index.html`, and move the rest into files of their own when that keeps the page easier to change.
-- Keep a local copy of `_deepnote_static/` in a folder of its own. Read each file the page loads or you will change with `read_file` once, unless you wrote it in this conversation; `get_project` lists them. Images that `read_file` cannot read show as broken in the local preview without failing the check. Edit the files there, and once the page works in the local preview in Testing, push each new or changed file with `write_file` at its path under `_deepnote_static/` and `overwrite: true`. Where you cannot run local commands, write the files with `write_file` directly.
+- Keep a local copy of `_deepnote_static/` in a folder of its own. Read each file the page loads or you will change with `read_file` once, unless you wrote it in this conversation; `get_project` lists them. Images that `read_file` cannot read show as broken in the local preview. Edit the files there, and once the page works in the local preview in Testing, push each new or changed file with `write_file` at its path under `_deepnote_static/` and `overwrite: true`. Where you cannot run local commands, write the files with `write_file` directly. When the app existed before this conversation, ask the user before the first push whether to update it in Deepnote, with the preview URL when there is one: pushing overwrites the app for good, and viewers of a published app see the change at once. Once they agree, push later changes they ask for in this conversation without asking again.
 - Start the `<head>` of `index.html` with `<script src="https://deepnote.com/static/app-client/v1.js"></script>`, before any other script, and load CDN scripts with `crossorigin="anonymous"`. The script exposes `Deepnote.connect()`, not React components or `DeepnoteApp`.
 - Style the page with Tailwind CSS 4.3.3. After the app client script, add the Tailwind browser build, Inter, and the default theme below, then use its colors in classes (`bg-surface`, `text-muted`, `border-border`, `bg-accent`, `text-positive`, ...). Its dark values apply on their own, so don't add `dark:` variants for theme colors. Chart code reads series colors with `getComputedStyle(document.documentElement).getPropertyValue('--color-chart-1')`.
 
@@ -84,7 +84,7 @@ Preview the page locally before pushing it, against the same API and data it get
 2. Run `node scripts/app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin>` in the background, with the script from this skill's directory. Have the same background command kill it after 15 minutes, for example after `sleep 900`, so previews do not pile up; the token expires then anyway. It needs Node 18 or later. It serves the page embedded the way Deepnote does, prints the preview URL, and logs files the page asks for that do not exist.
 3. With a browser tool, open the preview URL. The bar above the page says whether the app connected to Deepnote and lists its errors. Look at the page and try the inputs; runs started there are real runs. Fix the files and reload until the bar shows no errors. When it stops, mint a new token and start it again.
 4. Without a browser tool, give the user the preview URL, ask them to open it, and say that you did not check the page yourself.
-5. Push the new and changed files, and leave the preview running so the user can open it until it is killed after 15 minutes. Stop it sooner when the user asks, or before starting another preview on the same port. When the user still wants it after it stops, mint a new token and start it again.
+5. Push the new and changed files, asking first as The Page describes, and leave the preview running so the user can open it until it is killed after 15 minutes. Stop it sooner when the user asks, or before starting another preview on the same port. When the user still wants it after it stops, mint a new token and start it again.
 
 A client that cannot run local commands, such as ChatGPT or claude.ai, cannot load the page: say the page itself was not checked and ask the user to open it. Do not install browser tools in the notebook to check it.
 
@@ -94,4 +94,7 @@ A new data app is unpublished, so only the project's editors can open it. Publis
 
 ## Reporting
 
-Report the project, the app URL from `staticFiles.url` in `get_project`, and whether the app is published, and describe the work as changes to the app. Never construct the URL. When a preview is running, also give its URL and the time it stops, as a local preview that works only on this computer; the app URL stays the main link.
+Report the project and whether the app is published, and describe the work as changes to the app. End with the links as two options:
+
+1. Deepnote: the app URL from `staticFiles.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
+2. Local preview: the preview URL and the time it stops, while a preview is running. It works only on this computer.
