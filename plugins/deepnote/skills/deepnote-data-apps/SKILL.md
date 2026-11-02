@@ -94,7 +94,7 @@ A new data app is unpublished, so only the project's editors can open it. Publis
 
 ## Reporting
 
-Report the project and whether the app is published, and describe the work as changes to the app. End with the links as two options:
+Report the project and whether the app is published, and describe the work as changes to the app. End with the links as two options, labeled with where each one runs:
 
-1. Deepnote: the app URL from `staticFiles.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
-2. Local preview: the preview URL and the time it stops, while a preview is running. It works only on this computer.
+1. Deepnote (cloud): the app URL from `staticFiles.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
+2. Local preview (this computer only): the preview URL and the time it stops, while a preview is running.
