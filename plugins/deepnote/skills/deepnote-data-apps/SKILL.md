@@ -84,7 +84,7 @@ Preview the page locally before pushing it, against the same API and data it get
 2. Run `node scripts/app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin>` in the background, with the script from this skill's directory. It needs Node 18 or later. It serves the page embedded the way Deepnote does, prints the preview URL, and logs files the page asks for that do not exist.
 3. With a browser tool, open the preview URL. The bar above the page says whether the app connected to Deepnote and lists its errors. Look at the page and try the inputs; runs started there are real runs. Fix the files and reload until the bar shows no errors. The token expires after about 15 minutes: when API calls start failing, mint a new one and restart the script.
 4. Without a browser tool, give the user the preview URL, ask them to open it, and say that you did not check the page yourself.
-5. Push the new and changed files.
+5. Push the new and changed files, and leave the preview running so the user can open it. Stop it when the user asks, or before starting another preview on the same port. It stops loading data once the token expires: when the user still wants it, mint a new token and restart it.
 
 A client that cannot run local commands, such as ChatGPT or claude.ai, cannot load the page: say the page itself was not checked and ask the user to open it. Do not install browser tools in the notebook to check it.
 
@@ -94,4 +94,4 @@ A new data app is unpublished, so only the project's editors can open it. Publis
 
 ## Reporting
 
-Report the project, the app URL from `staticFiles.url` in `get_project`, and whether the app is published, and describe the work as changes to the app. Never construct the URL.
+Report the project, the app URL from `staticFiles.url` in `get_project`, and whether the app is published, and describe the work as changes to the app. Never construct the URL. When a preview is running, also give its URL as a local preview that works on this computer while the script runs; the app URL stays the main link.
