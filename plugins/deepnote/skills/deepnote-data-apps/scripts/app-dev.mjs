@@ -16,21 +16,36 @@ const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> 
   --api-origin   apiOrigin from the same create_data_app_token result.
   --port         Port of the preview page; the app is served on the next one. Default 4747.`
 
+// The common web types from the table Deepnote's server looks content types up in.
 const CONTENT_TYPES = {
+  '.avif': 'image/avif',
   '.css': 'text/css; charset=utf-8',
   '.csv': 'text/csv; charset=utf-8',
   '.gif': 'image/gif',
+  '.htm': 'text/html; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.ico': 'image/x-icon',
   '.jpeg': 'image/jpeg',
   '.jpg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
+  '.mp3': 'audio/mpeg',
+  '.mp4': 'video/mp4',
+  '.otf': 'font/otf',
+  '.pdf': 'application/pdf',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
+  '.ttf': 'font/ttf',
+  '.txt': 'text/plain; charset=utf-8',
+  '.wasm': 'application/wasm',
+  '.webm': 'video/webm',
   '.webp': 'image/webp',
+  '.woff': 'font/woff',
   '.woff2': 'font/woff2',
+  '.xml': 'application/xml; charset=utf-8',
 }
 // The app client asks for a new token a minute before this, so its refresh path runs during a preview.
 const TOKEN_LIFETIME_SECONDS = 120
@@ -41,18 +56,24 @@ function fail(message) {
 }
 
 /**
- * Serves the folder the way Deepnote serves `_deepnote_static/`: paths ending in `/` get their index.html, other
- * paths need the exact file name, and nosniff makes the content type matter.
+ * Serves the folder the way Deepnote serves `_deepnote_static/`: paths ending in `/` get their index.html, a folder
+ * without the trailing `/` redirects to it so relative links inside work, other paths need the exact file name, and
+ * nosniff makes the content type matter.
  */
 function createAppServer(root, origins, apiOrigin) {
   return http.createServer(async (req, res) => {
+    const { pathname, search } = new URL(req.url, origins.app)
     let filePath
     let file
     try {
-      const { pathname } = new URL(req.url, origins.app)
       filePath = path.join(root, decodeURIComponent(pathname), pathname.endsWith('/') ? 'index.html' : '')
       if (filePath.startsWith(root + path.sep)) file = await fs.promises.readFile(filePath)
-    } catch {}
+    } catch (error) {
+      if (error.code === 'EISDIR') {
+        res.writeHead(302, { location: `${pathname}/${search}` }).end()
+        return
+      }
+    }
     if (!file) {
       console.log(`[page] 404 ${req.url}`)
       res.writeHead(404).end()
@@ -82,7 +103,8 @@ body { display: flex; flex-direction: column; font: 13px/1.5 system-ui, sans-ser
 #status { padding: 8px 16px; border-bottom: 1px solid #dde4ee; }
 #status.problem { background: #fff1f2; color: #9f1239; }
 #status ul { margin: 4px 0 0; padding-left: 20px; }
-iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+/* Deepnote sets this to the viewer's Deepnote theme, which the app's prefers-color-scheme follows; here it is the OS's. */
+iframe { flex: 1; width: 100%; border: 0; color-scheme: light dark; }
 </style>
 </head>
 <body>
