@@ -94,7 +94,7 @@ A new data app is unpublished, so only the project's editors can open it. Publis
 
 ## Reporting
 
-Report the project and whether the app is published, and describe the work as changes to the app. End with the links as two options, labeled with where each one runs:
+Report the project and whether the app is published, and describe the work as changes to the app. MCP can't tell whether the app is public, so don't say either way. End with the links as two options, labeled with where each one runs:
 
 1. Deepnote (cloud): the app URL from `dataApp.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
 2. Local preview (this computer only): the preview URL and the time it stops, while a preview is running.
