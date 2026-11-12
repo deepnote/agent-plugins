@@ -90,7 +90,7 @@ A client that cannot run local commands, such as ChatGPT or claude.ai, cannot lo
 
 ## Publishing
 
-A new data app is unpublished, so only the project's editors can open it. Publish it to its viewers only when the user asks, with `update_project` and `dataApp.published: true`; `false` makes it editor-only again. Viewers need access to the project. Publishing never makes an app public: only a project admin can let anyone with the link open it, from the Share menu in Deepnote. People are invited from the Share menu too, not through MCP.
+A new data app is unpublished, so only the project's editors can open it. Publish it to its viewers only when the user asks, with `update_project` and `dataApp.published: true`; `false` makes it editor-only again. Viewers need access to the project. Publishing never makes an app public, and neither MCP nor the API can: only a project admin can let anyone with the link open it, from the Share menu in Deepnote. People are invited from the Share menu too, not through MCP.
 
 ## Reporting
 
