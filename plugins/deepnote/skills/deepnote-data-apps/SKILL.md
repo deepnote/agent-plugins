@@ -28,7 +28,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 - Queries, heavy computation, credentials, and authenticated calls stay in the notebook. The page only filters, sorts, and charts.
 - The app's controls are the notebook's input blocks. Reuse them by name and add only the missing ones.
 - For AI-written text, such as a summary of the data, keep an agent block as the last block and ask for that text in its prompt. The page reads it as `agentBlockSummary`.
-- The page shows each viewer's own newest successful detached run, so running blocks in the editor changes nothing. After changing the notebook, start a run with `create_run` and `detachedRunStorageMode: "readonly"`, wait until `get_run` with `snapshotDelivery: "blocks"` reports success, and check the JSON output's keys, types, and first rows before wiring the page to it. Changes to the page alone need no new run.
+- The page shows each viewer's own newest successful detached run, or, in a public app, the editors' newest one until the viewer runs it, so running blocks in the editor changes nothing. After changing the notebook, start a run with `create_run` and `detachedRunStorageMode: "readonly"`, wait until `get_run` with `snapshotDelivery: "blocks"` reports success, and check the JSON output's keys, types, and first rows before wiring the page to it. Changes to the page alone need no new run.
 
 ## The Page
 
@@ -76,7 +76,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## Testing
 
-Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Delete scratch blocks when done.
+Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Finish with a run using `{}`, since in a public app the latest editor run is what visitors see. Delete scratch blocks when done.
 
 Preview the page locally before pushing it, against the same API and data it gets in Deepnote:
 
