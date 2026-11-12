@@ -69,7 +69,7 @@ folder/notebook 10% + a1b2c3d4
 - File paths, when exposed and requested, append after the project segment as `/{encodeURIComponent(filePath)}`.
 - Cell or block anchors append after the UTM query string as `#anchor`.
 - Use Streamlit URLs returned by `create_streamlit_app` or `list_streamlit_apps`; do not assemble them from an app ID.
-- Use the data app URL from `staticFiles.url` in `get_project`; never construct it.
+- Use the data app URL from `dataApp.url` in `get_project`; never construct it.
 
 ## UTM Parameters
 

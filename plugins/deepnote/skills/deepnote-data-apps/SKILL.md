@@ -66,7 +66,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 - By default, make it calm and compact like Deepnote without copying Deepnote's UI: neutral surfaces with one blue accent, 1px borders, `rounded-lg` controls and `rounded-xl` cards, sentence case, solid backgrounds without gradients, no emoji or decorative icons, shadows only on floating elements, and at most one primary button per view. When the user asks for another look or their brand, change the theme and classes freely.
 - Connect with `const notebook = Deepnote.connect().notebook('<notebook ID>')`, using the notebook ID from `get_project`.
-  - On load, render `const {appData, agentBlockSummary} = await notebook.appData()`. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.
+  - On load, render `const {appData, agentBlockSummary, runCreatedAt} = await notebook.appData()` and show `runCreatedAt` as the time of the last update. In a public app, a viewer with no run of their own gets the latest results of the app's editors. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.
   - `const {run} = await notebook.run(values, {onProgress})` runs the whole notebook for this viewer. When `run.status === 'success'`, render `await notebook.appData()` again. Run it on submission, or with `{}` from a refresh button when the app has no inputs.
   - Build the form from `await notebook.inputs()`, which returns each input's label, value, min, max, step, and options, so input changes in the notebook reach the app. Never overwrite input variables with hardcoded values. Values are keyed by input name and are strings (sliders too), booleans, or string arrays.
 - Show loading, empty, and error states, prevent duplicate submissions, and handle rejected calls, missing results, and `run.error`. When a failed run has no error text, show its status and point to run history.
@@ -90,11 +90,11 @@ A client that cannot run local commands, such as ChatGPT or claude.ai, cannot lo
 
 ## Publishing
 
-A new data app is unpublished, so only the project's editors can open it. Publish it to its viewers only when the user asks, with `update_project` and `staticFiles.published: true`; `false` makes it editor-only again. Viewers need access to the project and the workspace must allow static file sharing; link sharing isn't available. People are invited from the Share menu in Deepnote, not through MCP.
+A new data app is unpublished, so only the project's editors can open it. Publish it to its viewers only when the user asks, with `update_project` and `dataApp.published: true`; `false` makes it editor-only again. Viewers need access to the project and the workspace must allow static file sharing. Publishing never makes an app public: only a project admin can let anyone with the link open it, from the Share menu in Deepnote. People are invited from the Share menu too, not through MCP.
 
 ## Reporting
 
 Report the project and whether the app is published, and describe the work as changes to the app. End with the links as two options, labeled with where each one runs:
 
-1. Deepnote (cloud): the app URL from `staticFiles.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
+1. Deepnote (cloud): the app URL from `dataApp.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
 2. Local preview (this computer only): the preview URL and the time it stops, while a preview is running.
