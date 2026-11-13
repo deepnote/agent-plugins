@@ -28,7 +28,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 - Queries, heavy computation, credentials, and authenticated calls stay in the notebook. The page only filters, sorts, and charts.
 - The app's controls are the notebook's input blocks. Reuse them by name and add only the missing ones.
 - For AI-written text, such as a summary of the data, keep an agent block as the last block and ask for that text in its prompt. The page reads it as `agentBlockSummary`.
-- The page shows each viewer's own newest successful detached run, so running blocks in the editor changes nothing. After changing the notebook, start a run with `create_run` and `detachedRunStorageMode: "readonly"`, wait until `get_run` with `snapshotDelivery: "blocks"` reports success, and check the JSON output's keys, types, and first rows before wiring the page to it. Changes to the page alone need no new run.
+- The page shows each viewer's own newest successful detached run, or, in a public app without private outputs, the editors' newest one until the viewer runs it, so running blocks in the editor changes nothing. After changing the notebook, start a run with `create_run` and `detachedRunStorageMode: "readonly"`, wait until `get_run` with `snapshotDelivery: "blocks"` reports success, and check the JSON output's keys, types, and first rows before wiring the page to it. Changes to the page alone need no new run.
 
 ## The Page
 
@@ -66,8 +66,8 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 - By default, make it calm and compact like Deepnote without copying Deepnote's UI: neutral surfaces with one blue accent, 1px borders, `rounded-lg` controls and `rounded-xl` cards, sentence case, solid backgrounds without gradients, no emoji or decorative icons, shadows only on floating elements, and at most one primary button per view. When the user asks for another look or their brand, change the theme and classes freely.
 - Connect with `const notebook = Deepnote.connect().notebook('<notebook ID>')`, using the notebook ID from `get_project`.
-  - On load, render `const {appData, agentBlockSummary} = await notebook.appData()`. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.
-  - `const {run} = await notebook.run(values, {onProgress})` runs the whole notebook for this viewer. When `run.status === 'success'`, render `await notebook.appData()` again. Run it on submission, or with `{}` from a refresh button when the app has no inputs.
+  - On load, render `const {appData, agentBlockSummary, runCreatedAt} = await notebook.appData()` and show `runCreatedAt` as the time of the last update. In a public app without private outputs, a viewer with no run of their own gets the latest results of the app's editors. It throws when the viewer has no run yet, their results expired, or the run has no JSON output: show the message in an empty state with a button that runs the notebook with `{}`.
+  - `const {run} = await notebook.run(values, {onProgress})` runs the whole notebook for this viewer. When `run.status === 'success'`, render `await notebook.appData()` again. Run it on submission, or with `{}` from a refresh button when the app has no inputs. Public visitors with **View** access can't run the app, so the call rejects: show its message.
   - Build the form from `await notebook.inputs()`, which returns each input's label, value, min, max, step, and options, so input changes in the notebook reach the app. Never overwrite input variables with hardcoded values. Values are keyed by input name and are strings (sliders too), booleans, or string arrays.
 - Show loading, empty, and error states, prevent duplicate submissions, and handle rejected calls, missing results, and `run.error`. When a failed run has no error text, show its status and point to run history.
 - Lay out dashboards as a title with one line of context, filters, a row of key numbers, one to three main charts, then a detail table. Format numbers and dates for reading, and label units.
@@ -76,7 +76,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## Testing
 
-Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Delete scratch blocks when done.
+Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Finish with a run using `{}` and check that it succeeds, since in a public app the latest editor run is what visitors see. Delete scratch blocks when done.
 
 Preview the page locally before pushing it, against the same API and data it gets in Deepnote:
 
@@ -90,11 +90,11 @@ A client that cannot run local commands, such as ChatGPT or claude.ai, cannot lo
 
 ## Publishing
 
-A new data app is unpublished, so only the project's editors can open it. Publish it to its viewers only when the user asks, with `update_project` and `staticFiles.published: true`; `false` makes it editor-only again. Viewers need access to the project and the workspace must allow static file sharing; link sharing isn't available. People are invited from the Share menu in Deepnote, not through MCP.
+Published and public are different settings. Published lets people with access to the project open the app; public lets anyone with its link open it, without a Deepnote account. A new data app is unpublished, so only the project's editors can open it. Publish it only when the user asks, with `update_project` and `dataApp.published: true`; `false` makes it editor-only again and ends public access for good: publishing it again doesn't bring it back. MCP and the API can't make an app public or see whether it is: when the user asks for that, tell them a project admin can turn on **Anyone with a link to this app** in the Share menu in Deepnote, with View to show results or Execute to also let visitors run it. People are invited from the Share menu too, not through MCP.
 
 ## Reporting
 
-Report the project and whether the app is published, and describe the work as changes to the app. End with the links as two options, labeled with where each one runs:
+Report the project and whether the app is published, and describe the work as changes to the app. MCP can't tell whether the app is public, so don't say either way. End with the links as two options, labeled with where each one runs:
 
-1. Deepnote (cloud): the app URL from `staticFiles.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
+1. Deepnote (cloud): the app URL from `dataApp.url` in `get_project`. Never construct it. When the changes were not pushed, say the app in Deepnote is unchanged instead.
 2. Local preview (this computer only): the preview URL and the time it stops, while a preview is running.

@@ -11,7 +11,7 @@ A Streamlit app project has two parts: the app, Python code in `app.py` hosted o
 
 ## Creating An App
 
-1. Create the project with `create_project` and `projectType: "streamlit_app"`. It starts with its notebook and a placeholder `app.py` that is already served, with `streamlitAppApiAccessEnabled` on.
+1. Create the project with `create_project` and `projectType: "streamlit_app"`. It starts with its notebook and a placeholder `app.py` that is already served, with viewer API access already on.
 2. Get the app ID and URL from `list_streamlit_apps`. Do not call `create_streamlit_app`; the project serves one app.
 3. Look for data in the project's integrations and files first, then build a small, polished first version. If nothing fits, use clearly labeled sample data and offer to connect real data, unless the user named specific data: then ask where it is.
 
