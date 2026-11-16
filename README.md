@@ -81,6 +81,7 @@ plugins/deepnote/
   .codex-plugin/plugin.json            Codex manifest
   .claude-plugin/plugin.json           Claude manifest
   .mcp.json                            Hosted MCP server, shared by all hosts
+  README.md                            Listing description for the Claude plugin directory
   skills/                              Agent-facing skills, shared by all hosts
   assets/                              Icon
 scripts/detect-deepnote-mcp-drift.sh   Compares the live MCP tools with the skills
