@@ -17,6 +17,8 @@ If you already added the Deepnote connector in Claude, the plugin uses the same 
 
 Then run `/mcp`, choose the Deepnote server, and sign in.
 
+Installed this way, the plugin also includes a script that previews data apps on your computer before publishing. The directory edition leaves that script out.
+
 ## Requirements
 
 - A Deepnote account with access to the workspace you want to use.
@@ -35,8 +37,7 @@ Then run `/mcp`, choose the Deepnote server, and sign in.
 ## Data and network access
 
 - The plugin sends requests to `https://deepnote.com/mcp` on your behalf. What Claude reads there, such as notebook content, run outputs, file contents, and integration metadata, becomes part of your conversation with Claude.
-- The plugin has no hooks and runs nothing on its own.
-- The data apps skill ships one optional script, `skills/deepnote-data-apps/scripts/app-dev.mjs`, which Claude can run to preview a data app page before publishing it. It needs Node 18 or later and uses built-in modules only. It starts two servers on `127.0.0.1` (ports 4747 and 4748 by default), serves the page folder from your computer, and makes no outbound requests itself. The previewed page calls the Deepnote API from your browser with a short-lived viewer token that is passed on the command line and never written to a file. The preview only works where Claude can run local commands.
+- The plugin has no hooks, ships no scripts, and runs nothing on your computer.
 - Data app pages that Claude writes with this skill load the Deepnote app client from `deepnote.com`, the Tailwind CSS browser build from `cdn.jsdelivr.net`, and the Inter font from `fonts.googleapis.com`.
 
 ## Links
