@@ -76,7 +76,7 @@ A data app project has two parts: the page, a responsive HTML page in `_deepnote
 
 ## Testing
 
-Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Finish with a run using `{}` and check that it succeeds, since everyone with access who has no run of their own can see the latest editor run. Delete scratch blocks when done.
+Test a changed-input submission with `create_run`, its `inputs`, and `detachedRunStorageMode: "readonly"`, then read it with `get_run` and `snapshotDelivery: "blocks"`. When it fails, inspect its status and output and fix the cause; when it is still pending after several checks, point to run history without claiming the flow works. Finish with a run using `{}` and check that it succeeds, since, when the app lets everyone with access see results without running it, they see the latest editor run until they run it themselves. Delete scratch blocks when done.
 
 Preview the page locally before pushing it, against the same API and data it gets in Deepnote:
 
