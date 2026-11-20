@@ -10,10 +10,11 @@ import http from 'node:http'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 
-const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> [--port <port>]
+const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> --project-id <projectId> [--port <port>]
 
   --token        Viewer token from the create_data_app_token MCP tool. It is never printed.
   --api-origin   apiOrigin from the same create_data_app_token result.
+  --project-id   ID of the data app project, the one passed to create_data_app_token.
   --port         Port of the preview page; the app is served on the next one. Default 4747.`
 
 // The common web types from the table Deepnote's server looks content types up in.
@@ -91,7 +92,7 @@ function createAppServer(root, origins, apiOrigin) {
   })
 }
 
-function renderDeepnotePage({ appOrigin, apiOrigin, token }) {
+function renderDeepnotePage({ appOrigin, apiOrigin, token, projectId }) {
   return `<!doctype html>
 <html>
 <head>
@@ -111,7 +112,7 @@ iframe { flex: 1; width: 100%; border: 0; color-scheme: light dark; }
 <div id="status" role="status">Waiting for the app to connect to Deepnote.</div>
 <iframe src="${appOrigin}/" allow="fullscreen" title="Data app"></iframe>
 <script>
-const { appOrigin, apiOrigin, token } = ${JSON.stringify({ appOrigin, apiOrigin, token })}
+const { appOrigin, apiOrigin, token, projectId } = ${JSON.stringify({ appOrigin, apiOrigin, token, projectId })}
 const status = document.getElementById('status')
 const errors = []
 let connected = false
@@ -137,7 +138,7 @@ window.addEventListener('message', event => {
   const { type, message, line, source } = event.data ?? {}
   if (type === 'deepnote-static-files-api-token-request') {
     const expiresAtSeconds = Math.floor(Date.now() / 1000) + ${TOKEN_LIFETIME_SECONDS}
-    event.source.postMessage({ type: 'deepnote-static-files-api-token-response', token, apiOrigin, expiresAtSeconds }, appOrigin)
+    event.source.postMessage({ type: 'deepnote-static-files-api-token-response', token, apiOrigin, expiresAtSeconds, projectId }, appOrigin)
     return
   }
   if (type === 'deepnote-static-files-app-ready') {
@@ -170,6 +171,7 @@ async function main() {
     options: {
       token: { type: 'string' },
       'api-origin': { type: 'string' },
+      'project-id': { type: 'string' },
       port: { type: 'string', default: '4747' },
       help: { type: 'boolean', default: false },
     },
@@ -178,8 +180,11 @@ async function main() {
     console.log(USAGE)
     return
   }
-  if (positionals.length !== 1 || !values.token || !values['api-origin']) {
+  if (positionals.length !== 1 || !values.token || !values['api-origin'] || !values['project-id']) {
     fail(USAGE)
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(values['project-id'])) {
+    fail("--project-id must be the data app project's ID, the one passed to create_data_app_token.")
   }
   const root = path.resolve(positionals[0])
   if (!fs.existsSync(path.join(root, 'index.html'))) {
@@ -192,7 +197,7 @@ async function main() {
   const deepnoteServer = http.createServer((req, res) =>
     res
       .writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' })
-      .end(renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token }))
+      .end(renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token, projectId: values['project-id'] }))
   )
   origins.deepnote = await listen(deepnoteServer, port)
   origins.app = await listen(createAppServer(root, origins, apiOrigin), port + 1)
