@@ -9,6 +9,8 @@ description: Use when a task mentions Deepnote, the Deepnote MCP server, Deepnot
 
 Use the Deepnote MCP server as the primary interface for hosted Deepnote state. Prefer it over browser automation, screenshots, ad hoc HTTP calls, or local filesystem guesses whenever the user asks about Deepnote projects, notebooks, blocks, integrations, files, apps, search, or notebook runs. The one exception is previewing a data app page locally with the script in `deepnote-data-apps`.
 
+Local `.deepnote` files are a separate surface. These MCP tools only see projects in Deepnote Cloud; they do not read or write `.deepnote` files in the user's repository. For those, use the open-source `deepnote` CLI (`npm install -g @deepnote/cli`). `deepnote install-skills` installs a skill with the `.deepnote` format and the CLI reference. Use `deepnote sync` to pull Cloud projects into local files and push local edits back, and `deepnote open` to upload a local file to Deepnote Cloud. Source and docs: https://github.com/deepnote/deepnote.
+
 If the Deepnote MCP server is not available in the current session, say that clearly and ask the user to connect or configure it. The hosted endpoint is `https://deepnote.com/mcp`; it accepts an OAuth sign-in or a Deepnote personal API key sent as a bearer token. Do not pretend to have inspected Deepnote state.
 
 The plugin registers the hosted server under the MCP server id `deepnote`.

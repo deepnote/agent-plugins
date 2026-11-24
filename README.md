@@ -72,6 +72,17 @@ In Claude Code and Codex the agent can also preview a data app's page locally ag
 - `Copy utils/helpers.py from this project into my Sales Analysis project.`
 - `Look up the Deepnote docs for scheduled notebooks.`
 
+## Local `.deepnote` files
+
+This plugin works with projects in your Deepnote Cloud workspace. To let the agent work on `.deepnote` files in your repository, install the open-source [Deepnote CLI](https://github.com/deepnote/deepnote) and its skill:
+
+```bash
+npm install -g @deepnote/cli
+deepnote install-skills
+```
+
+The agent can then write and run notebooks locally, and use `deepnote sync` or `deepnote open` to move them to and from Deepnote Cloud. The two work together: write a notebook locally, then use this plugin to run it, inspect its runs, or build an app on it in your workspace.
+
 ## Repository layout
 
 ```text
