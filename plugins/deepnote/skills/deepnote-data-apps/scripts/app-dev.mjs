@@ -10,7 +10,7 @@ import http from 'node:http'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 
-const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> --notebook-id <notebookId> [--port <port>]
+const USAGE = `Usage: node app-dev.mjs <folder with index.html> --token <token> --api-origin <apiOrigin> [--notebook-id <notebookId>] [--port <port>]
 
   --token        Viewer token from the create_data_app_token MCP tool. It is never printed.
   --api-origin   apiOrigin from the same create_data_app_token result.
@@ -180,7 +180,7 @@ async function main() {
     console.log(USAGE)
     return
   }
-  if (positionals.length !== 1 || !values.token || !values['api-origin'] || !values['notebook-id']) {
+  if (positionals.length !== 1 || !values.token || !values['api-origin']) {
     fail(USAGE)
   }
   const root = path.resolve(positionals[0])
@@ -194,7 +194,7 @@ async function main() {
   const deepnoteServer = http.createServer((req, res) =>
     res
       .writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' })
-      .end(renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token, notebookId: values['notebook-id'] }))
+      .end(renderDeepnotePage({ appOrigin: origins.app, apiOrigin, token: values.token, notebookId: values['notebook-id'] ?? null }))
   )
   origins.deepnote = await listen(deepnoteServer, port)
   origins.app = await listen(createAppServer(root, origins, apiOrigin), port + 1)
