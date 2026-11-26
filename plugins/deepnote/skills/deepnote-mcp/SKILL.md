@@ -63,6 +63,8 @@ This is the authoritative summary of tool arguments. Workflow skills add only th
 - `get_machine`: get the project machine's `status` (`stopped`, `starting`, `running`, `stopping`, or `error`), `error`, `startingPhase` (what a `starting` machine waits for: `waiting_for_capacity` or `pulling_image`), machine `type` with its vCPUs, memory, and GPUs, `sandboxEnvironmentId`, and `idleShutdownSeconds` by `projectId`. This is the machine the editor, live runs, and hosted Streamlit apps use; detached runs use machines of their own.
 - `start_machine`, `stop_machine`, `restart_machine`: start, stop, or restart the project machine by `projectId`. They return without waiting, so poll `get_machine`. Starting a running machine or stopping a stopped one does nothing. Stopping or restarting clears kernel state for everyone working in the project; restarting recovers a machine in the `error` status.
 - `update_machine`: change the project machine's `type` or `sandboxEnvironmentId` (`id`s from `list_machine_types`), or `idleShutdownSeconds` (up to 86400). Requires `projectId` and at least one of them. Changing the type or sandbox environment of a running machine requires `restart: true`; without it the call returns a conflict and changes nothing.
+- `list_skills`: list the workspace's skills that the caller can read, the projects in Skills folders, each with `projectId`, `name`, and `description`.
+- `get_skill`: return the instructions of a skill by `projectId` from `list_skills` as `text`, or with optional `notebookId` one of the notebooks the skill lists.
 - `list_docs`: return the Deepnote docs navigation tree.
 - `get_doc`: fetch a Deepnote documentation article by slug.
 

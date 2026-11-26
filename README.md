@@ -49,6 +49,7 @@ Through the hosted MCP server the agent can:
 - Start notebook runs, optionally with input values or on a chosen machine type, and read run history, status, errors, and snapshot output
 - Choose a project's environment (Docker image), check whether its machine is running and how big it is, start, stop, or restart it, and change its machine type or idle shutdown
 - Read Deepnote docs
+- Find and follow the workspace's own skills, kept as projects in its Skills folder
 - Build data apps and Streamlit apps, each in a project of its own
 
 In Claude Code and Codex the agent can also preview a data app's page locally against its real data before pushing it, in its own browser or yours. That needs Node 18 or later.
