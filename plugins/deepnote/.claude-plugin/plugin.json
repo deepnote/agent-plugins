@@ -1,7 +1,7 @@
 {
   "name": "deepnote",
   "displayName": "Deepnote",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "description": "Search Deepnote workspaces, inspect and edit projects and notebooks, manage integrations and project machines, build data apps and Streamlit apps, generate links, read docs, and run notebooks from Claude.",
   "author": {
     "name": "Deepnote",
