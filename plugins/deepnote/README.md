@@ -5,7 +5,7 @@ Work with your Deepnote workspace from Claude. Search projects, read and edit no
 ## What the plugin includes
 
 - A connection to the hosted Deepnote MCP server at `https://deepnote.com/mcp`. You sign in with your Deepnote account through OAuth, and Claude can only see and change what your account already has access to.
-- Seven skills that teach Claude how to use the server well: shared rules and the tool catalogue, workspace and project inspection, notebooks and blocks, notebook runs and machines, project and notebook links, data apps, and Streamlit apps.
+- Eight skills that teach Claude how to use the server well: shared rules and the tool catalogue, workspace and project inspection, notebooks and blocks, notebook runs and machines, project and notebook links, data apps, Streamlit apps, and the workspace's own skills from its Skills folder.
 
 If you already added the Deepnote connector in Claude, the plugin uses the same server, so you see one set of Deepnote tools.
 
