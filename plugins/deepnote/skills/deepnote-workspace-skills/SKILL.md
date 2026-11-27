@@ -5,7 +5,7 @@ description: "Use before analysis, notebook, or app work in a Deepnote workspace
 
 # Deepnote Workspace Skills
 
-A Deepnote workspace can keep its own skills: instructions for one kind of task, written by its team as projects in a folder named Skills. Tool arguments are defined in `deepnote-mcp`.
+A Deepnote workspace can keep its own skills: specialized instructions for specific tasks, written by its team as projects in a folder named Skills. Tool arguments are defined in `deepnote-mcp`.
 
 1. Call `list_skills` once at the start of the task.
 2. Load each skill that covers the task, or that the user names, with `get_skill`, and follow it. Do not load skills the task does not need.
